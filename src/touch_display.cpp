@@ -434,6 +434,22 @@ void TouchDisplay::showPrinterList(const char** names, int count) {
     _needsRedraw = true;
 }
 
+void TouchDisplay::showSlotList(const char* printerName, const char** labels, int count) {
+    strncpy(_slotPrinterName, printerName != nullptr ? printerName : "", sizeof(_slotPrinterName) - 1);
+    _slotPrinterName[sizeof(_slotPrinterName) - 1] = '\0';
+    _slotListCount = constrain(count, 0, static_cast<int>(sizeof(_slotLabels) / sizeof(_slotLabels[0])));
+    for (int i = 0; i < _slotListCount; ++i) {
+        strncpy(_slotLabels[i], (labels != nullptr && labels[i] != nullptr) ? labels[i] : "", sizeof(_slotLabels[i]) - 1);
+        _slotLabels[i][sizeof(_slotLabels[i]) - 1] = '\0';
+    }
+    for (int i = _slotListCount; i < static_cast<int>(sizeof(_slotLabels) / sizeof(_slotLabels[0])); ++i) {
+        _slotLabels[i][0] = '\0';
+    }
+    _screen = Screen::SLOT_LIST;
+    _msgExpiry = 0;
+    _needsRedraw = true;
+}
+
 void TouchDisplay::showTagUnknown(const char* uid) {
     strncpy(_uidBuf, uid, sizeof(_uidBuf) - 1);
     _uidBuf[sizeof(_uidBuf) - 1] = '\0';
@@ -639,6 +655,7 @@ void TouchDisplay::_render() {
         case Screen::TAG_MATCHED: _drawTagMatched(); break;
         case Screen::CONFIRM_DELETE: _drawConfirmDelete(); break;
         case Screen::PRINTER_LIST: _drawPrinterList(); break;
+        case Screen::SLOT_LIST: _drawSlotList(); break;
         case Screen::TAG_UNKNOWN: _drawTagUnknown(); break;
         case Screen::TAG_WRITING: _drawTagWriting(); break;
         case Screen::TAG_WRITE_OK:
@@ -1278,6 +1295,19 @@ int TouchDisplay::hitTestPrinterList(int16_t x, int16_t y) const {
         _printerListCount);
 }
 
+int TouchDisplay::hitTestSlotList(int16_t x, int16_t y) const {
+    if (_screen != Screen::SLOT_LIST) {
+        return -1;
+    }
+
+    return hitTestGrid(
+        x, y,
+        PRINTER_GRID_X0, PRINTER_GRID_Y0,
+        PRINTER_GRID_COLS, PRINTER_GRID_ROWS,
+        PRINTER_BTN_W, PRINTER_BTN_H, PRINTER_GRID_GAP,
+        _slotListCount);
+}
+
 int TouchDisplay::hitTestRegMaterial(int16_t x, int16_t y) const {
     if (_screen != Screen::REG_MATERIAL) {
         return -1;
@@ -1447,6 +1477,26 @@ void TouchDisplay::_drawPrinterList() {
         int by = PRINTER_GRID_Y0 + row * (PRINTER_BTN_H + PRINTER_GRID_GAP);
 
         drawGridButton(_canvas, bx, by, PRINTER_BTN_W, PRINTER_BTN_H, _printerNames[index], C_ACCENT, 1);
+    }
+    _canvas.setTextDatum(lgfx::top_left);
+}
+
+void TouchDisplay::_drawSlotList() {
+    _canvas.fillRect(0, STATUS_BAR_H, TFT_WIDTH, CONTENT_H, C_BG);
+    _canvas.setTextDatum(lgfx::middle_center);
+    _canvas.setTextColor(C_ACCENT);
+    _canvas.setTextSize(2);
+    char title[48];
+    snprintf(title, sizeof(title), "%.20s - Select Slot", _slotPrinterName);
+    _canvas.drawString(title, TFT_WIDTH / 2, CONTENT_Y + 18);
+
+    for (int index = 0; index < _slotListCount; ++index) {
+        int col = index % PRINTER_GRID_COLS;
+        int row = index / PRINTER_GRID_COLS;
+        int bx = PRINTER_GRID_X0 + col * (PRINTER_BTN_W + PRINTER_GRID_GAP);
+        int by = PRINTER_GRID_Y0 + row * (PRINTER_BTN_H + PRINTER_GRID_GAP);
+
+        drawGridButton(_canvas, bx, by, PRINTER_BTN_W, PRINTER_BTN_H, _slotLabels[index], C_ACCENT, 1);
     }
     _canvas.setTextDatum(lgfx::top_left);
 }

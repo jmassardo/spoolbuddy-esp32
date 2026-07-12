@@ -36,6 +36,7 @@ enum class Screen {
     TAG_MATCHED,
     CONFIRM_DELETE,
     PRINTER_LIST,
+    SLOT_LIST,
     TAG_UNKNOWN,
     TAG_WRITING,
     TAG_WRITE_OK,
@@ -121,6 +122,7 @@ public:
     void showConfirmDelete(const char* material, const char* color);
     void showConfirmPrompt(const char* prompt);
     void showPrinterList(const char** names, int count);
+    void showSlotList(const char* printerName, const char** labels, int count);
     void showTagUnknown(const char* uid);
     void showTagWriting(int spoolId);
     void showTagWriteResult(bool success, const char* msg);
@@ -170,6 +172,7 @@ public:
     bool hitTestConfirmNo(int16_t x, int16_t y) const;
     int hitTestTagMatchedAction(int16_t x, int16_t y) const;
     int hitTestPrinterList(int16_t x, int16_t y) const;
+    int hitTestSlotList(int16_t x, int16_t y) const;
     int hitTestRegMaterial(int16_t x, int16_t y) const;  // 0-11 or -1
     int hitTestRegBrand(int16_t x, int16_t y) const;     // 0-8 or -1
     int hitTestRegColorTile(int16_t x, int16_t y) const;
@@ -229,6 +232,9 @@ private:
     int _regWeightIdx = 3;
     int _printerListCount = 0;
     char _printerNames[16][32] = {};
+    int _slotListCount = 0;
+    char _slotLabels[16][12] = {};
+    char _slotPrinterName[32] = {};
     char _numpadBuf[8] = {};
     int _numpadLen = 0;
     char _numpadTitle[32] = {};
@@ -250,6 +256,7 @@ private:
     void _drawTagMatched();
     void _drawConfirmDelete();
     void _drawPrinterList();
+    void _drawSlotList();
     void _drawTagUnknown();
     void _drawTagWriting();
     void _drawTagWriteResult();

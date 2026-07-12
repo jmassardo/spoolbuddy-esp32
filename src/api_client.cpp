@@ -293,6 +293,59 @@ int ApiClient::getPrinters(PrinterInfo* printers, int maxCount) {
     return count;
 }
 
+int ApiClient::getSlots(int printerId, SlotInfo* slots, int maxCount) {
+    if (_serverUrl.isEmpty() || slots == nullptr || maxCount <= 0 || printerId <= 0) {
+        return 0;
+    }
+
+    String responseBody;
+    int statusCode = 0;
+    if (!_httpGet(_buildUrl(String("/api/v1/printers/") + printerId + "/status"), responseBody, statusCode)) {
+        return 0;
+    }
+    if (statusCode < 200 || statusCode >= 300) {
+        return 0;
+    }
+
+    JsonDocument doc;
+    if (deserializeJson(doc, responseBody) != DeserializationError::Ok) {
+        return 0;
+    }
+
+    int count = 0;
+    JsonArrayConst amsUnits = doc["ams"].as<JsonArrayConst>();
+    if (!amsUnits.isNull()) {
+        for (JsonVariantConst unit : amsUnits) {
+            int amsId = unit["id"] | -1;
+            if (amsId < 0) continue;
+            // AMS unit letter: 0→A, 1→B, etc.
+            char unitLetter = 'A' + constrain(amsId, 0, 25);
+            JsonArrayConst trays = unit["tray"].as<JsonArrayConst>();
+            if (trays.isNull()) continue;
+            for (JsonVariantConst tray : trays) {
+                if (count >= maxCount - 1) break;  // reserve last slot for external
+                int trayId = tray["id"] | -1;
+                if (trayId < 0) continue;
+                slots[count].amsId = amsId;
+                slots[count].trayId = trayId;
+                snprintf(slots[count].label, sizeof(slots[count].label), "%c%d", unitLetter, trayId + 1);
+                ++count;
+            }
+        }
+    }
+
+    // Always append the external spool slot
+    if (count < maxCount) {
+        slots[count].amsId = 255;
+        slots[count].trayId = 0;
+        strncpy(slots[count].label, "External", sizeof(slots[count].label) - 1);
+        slots[count].label[sizeof(slots[count].label) - 1] = '\0';
+        ++count;
+    }
+
+    return count;
+}
+
 bool ApiClient::assignSpool(int spoolId, int printerId, int amsId, int trayId) {
     if (_serverUrl.isEmpty() || spoolId <= 0 || printerId <= 0) {
         return false;

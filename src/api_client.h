@@ -73,6 +73,12 @@ struct PrinterInfo {
     String name;
 };
 
+struct SlotInfo {
+    int amsId = 0;
+    int trayId = 0;
+    char label[12] = {};
+};
+
 struct SpoolAssignment {
     int printerId = 0;
     int amsId = 0;
@@ -100,6 +106,7 @@ public:
     bool getSpoolById(int spoolId, SpoolRecord& record);
     bool deleteSpool(int spoolId);
     int getPrinters(PrinterInfo* printers, int maxCount);
+    int getSlots(int printerId, SlotInfo* slots, int maxCount);
     bool assignSpool(int spoolId, int printerId, int amsId, int trayId);
     bool unassignSpool(int printerId, int amsId, int trayId);
     bool getSpoolAssignment(int spoolId, SpoolAssignment& assignment);

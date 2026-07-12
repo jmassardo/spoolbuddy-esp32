@@ -27,6 +27,7 @@ enum class AppState {
     ConfirmDelete,
     ConfirmWifiReset,
     PrinterList,
+    SlotList,
     TagUnknown,
     Register,
     Calibrate,
@@ -70,6 +71,9 @@ SpoolAssignment matchedAssignment;
 bool matchedSpoolAssigned = false;
 PrinterInfo availablePrinters[16];
 int availablePrinterCount = 0;
+SlotInfo availableSlots[16];
+int availableSlotCount = 0;
+int selectedPrinterIndex = -1;
 int lastPendingWriteSpoolIdSeen = 0;
 bool backendConnected = false;
 bool deviceRegistered = false;
@@ -292,6 +296,8 @@ void resetMatchedSpoolState(bool clearActiveTag) {
     matchedAssignment = SpoolAssignment{};
     matchedSpoolAssigned = false;
     availablePrinterCount = 0;
+    availableSlotCount = 0;
+    selectedPrinterIndex = -1;
     lastReportedWeight = NAN;
 }
 
@@ -1192,15 +1198,50 @@ void loop() {
             TouchPoint tp = display.lastTouchPoint();
             int index = display.hitTestPrinterList(tp.x, tp.y);
             if (index >= 0 && index < availablePrinterCount) {
+                selectedPrinterIndex = index;
+                availableSlotCount = apiClient.getSlots(availablePrinters[index].id, availableSlots, 16);
+                if (availableSlotCount <= 1) {
+                    // No AMS (only external slot or error) — assign directly
+                    int amsId = availableSlotCount == 1 ? availableSlots[0].amsId : EXTERNAL_SPOOL_AMS_ID;
+                    int trayId = availableSlotCount == 1 ? availableSlots[0].trayId : EXTERNAL_SPOOL_TRAY_ID;
+                    bool ok = apiClient.assignSpool(
+                        matchedSpoolId,
+                        availablePrinters[index].id,
+                        amsId, trayId);
+                    backendConnected = ok;
+                    char msg[64];
+                    if (ok) {
+                        snprintf(msg, sizeof(msg), "Assigned to %.30s", availablePrinters[index].name.c_str());
+                    } else {
+                        snprintf(msg, sizeof(msg), "Assignment failed");
+                    }
+                    showActionResultThenHome(ok, msg);
+                } else {
+                    const char* slotLabels[16] = {};
+                    for (int i = 0; i < availableSlotCount; ++i) {
+                        slotLabels[i] = availableSlots[i].label;
+                    }
+                    display.showSlotList(availablePrinters[index].name.c_str(), slotLabels, availableSlotCount);
+                    appState = AppState::SlotList;
+                    stateExpiresAt = 0;
+                    chirp(880, 30);
+                }
+            }
+        } else if (appState == AppState::SlotList) {
+            TouchPoint tp = display.lastTouchPoint();
+            int index = display.hitTestSlotList(tp.x, tp.y);
+            if (index >= 0 && index < availableSlotCount && selectedPrinterIndex >= 0) {
                 bool ok = apiClient.assignSpool(
                     matchedSpoolId,
-                    availablePrinters[index].id,
-                    EXTERNAL_SPOOL_AMS_ID,
-                    EXTERNAL_SPOOL_TRAY_ID);
+                    availablePrinters[selectedPrinterIndex].id,
+                    availableSlots[index].amsId,
+                    availableSlots[index].trayId);
                 backendConnected = ok;
                 char msg[64];
                 if (ok) {
-                    snprintf(msg, sizeof(msg), "Assigned to %.30s", availablePrinters[index].name.c_str());
+                    snprintf(msg, sizeof(msg), "Assigned to %.16s %s",
+                        availablePrinters[selectedPrinterIndex].name.c_str(),
+                        availableSlots[index].label);
                 } else {
                     snprintf(msg, sizeof(msg), "Assignment failed");
                 }
@@ -1288,7 +1329,8 @@ void loop() {
             }
         } else if (!activeTagUid.isEmpty() && (now - lastTagSeenAt) > TAG_REARM_MS) {
             resetMatchedSpoolState(true);
-            if (appState == AppState::TagMatched || appState == AppState::TagUnknown || appState == AppState::TagRead) {
+            if (appState == AppState::TagMatched || appState == AppState::TagUnknown || appState == AppState::TagRead
+                || appState == AppState::PrinterList || appState == AppState::SlotList) {
                 showHomeScreen();
             }
         }
