@@ -1,0 +1,2624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpoolBuddy Touch UI Simulator</title>
+  <style>
+    :root {
+      --bg: #101010;
+      --status-bg: #202020;
+      --text: #ffffff;
+      --text-dim: #808080;
+      --accent: #3399ff;
+      --success: #00ff00;
+      --warning: #ff9900;
+      --error: #ff0000;
+      --page-bg: #090b0f;
+      --panel-bg: #11161f;
+      --panel-border: #2a3140;
+      --tile-bg: #181818;
+      --display-scale: 1.75;
+      --screen-w: 480px;
+      --screen-h: 320px;
+      --bezel: 14px;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 28px;
+      background:
+        radial-gradient(circle at top, rgba(51, 153, 255, 0.1), transparent 35%),
+        linear-gradient(180deg, #10141c 0%, #080a0f 100%);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .page {
+      max-width: 1620px;
+      margin: 0 auto;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(880px, 1fr) 360px;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .main-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .display-shell {
+      width: calc((480px + 28px) * var(--display-scale));
+      height: calc((320px + 28px) * var(--display-scale));
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .display-visual {
+      width: calc(480px + 28px);
+      height: calc(320px + 28px);
+      transform: scale(var(--display-scale));
+      transform-origin: top center;
+      background: linear-gradient(180deg, #3b4149 0%, #23272e 16%, #111317 100%);
+      border-radius: 20px;
+      padding: var(--bezel);
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #display {
+      position: relative;
+      width: 480px;
+      height: 320px;
+      overflow: hidden;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 0 22px rgba(0, 0, 0, 0.4);
+      user-select: none;
+      touch-action: none;
+      -webkit-user-select: none;
+      filter: brightness(1);
+    }
+
+    #display::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 24%, transparent 72%, rgba(255, 255, 255, 0.03));
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    #screen-root {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    .status-bar {
+      height: 32px;
+      background: var(--status-bg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 11px;
+      letter-spacing: 0.02em;
+    }
+
+    .status-left,
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-right {
+      gap: 12px;
+      font-weight: 600;
+    }
+
+    .brand-label {
+      color: var(--text-dim);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .mini-weight {
+      color: var(--text);
+      min-width: 74px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .wifi {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 14px;
+      width: 18px;
+      padding-bottom: 1px;
+    }
+
+    .wifi span {
+      width: 3px;
+      border-radius: 2px 2px 0 0;
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .wifi .b1 { height: 4px; }
+    .wifi .b2 { height: 7px; }
+    .wifi .b3 { height: 10px; }
+    .wifi .b4 { height: 13px; }
+    .wifi.online span.active { background: var(--success); }
+    .wifi.online.warning span.active { background: var(--warning); }
+    .wifi.offline span.active { background: var(--error); }
+
+    .indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-dim);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .indicator-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--error);
+      box-shadow: 0 0 8px rgba(255, 0, 0, 0.35);
+    }
+
+    .indicator.ok .indicator-dot {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(0, 255, 0, 0.35);
+    }
+
+    .content {
+      height: 288px;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .center-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px 28px;
+      gap: 10px;
+    }
+
+    .center-screen.boot {
+      gap: 14px;
+    }
+
+    .logo {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .version {
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .muted {
+      color: var(--text-dim);
+    }
+
+    .hint {
+      color: var(--text-dim);
+      font-size: 12px;
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      right: 0;
+      text-align: center;
+    }
+
+    .connect-title,
+    .lookup-title,
+    .ota-title,
+    .provision-title,
+    .assign-title,
+    .error-title,
+    .result-title {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .ssid,
+    .uid,
+    .ip-line,
+    .server-line {
+      font-size: 18px;
+      color: var(--accent);
+      word-break: break-word;
+    }
+
+    .dotline {
+      letter-spacing: 0.28em;
+      color: var(--accent);
+      min-height: 24px;
+      font-size: 22px;
+    }
+
+    .home-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 12px;
+      padding: 12px;
+      height: 100%;
+    }
+
+    .tile {
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      position: relative;
+      text-align: center;
+    }
+
+    .tile.active,
+    .tile.pressed {
+      background: rgba(51, 153, 255, 0.18);
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 1px rgba(51, 153, 255, 0.35), 0 0 0 1px rgba(51, 153, 255, 0.2);
+    }
+
+    .tile-icon {
+      font-size: 38px;
+      line-height: 1;
+    }
+
+    .tile-label {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .tile-subtext {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: -2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tile-footer {
+      position: absolute;
+      bottom: 12px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .scale-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100%;
+      padding: 22px 22px 14px;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .weight-big {
+      font-size: 62px;
+      font-weight: 800;
+      line-height: 1;
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stability {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .stability.stable { color: var(--success); }
+    .stability.unstable { color: var(--warning); }
+
+    .history-card {
+      width: 100%;
+      flex: 1;
+      margin-top: 2px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.025);
+      padding: 16px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .history-label {
+      color: var(--text-dim);
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .history-bars {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      padding-top: 12px;
+    }
+
+    .history-bar {
+      flex: 1;
+      min-height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px 4px 0 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .history-bar::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(51, 153, 255, 0.95), rgba(51, 153, 255, 0.45));
+      opacity: 0.95;
+    }
+
+    .history-bar.unstable::after {
+      background: linear-gradient(180deg, rgba(255, 153, 0, 0.95), rgba(255, 153, 0, 0.45));
+    }
+
+    .lookup-spinner {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 4px solid rgba(51, 153, 255, 0.2);
+      border-top-color: var(--accent);
+      border-right-color: rgba(51, 153, 255, 0.55);
+      margin-top: 6px;
+      transform: rotate(45deg);
+    }
+
+    .matched-screen {
+      height: 100%;
+      padding: 18px 20px 16px;
+      display: grid;
+      grid-template-columns: 136px 1fr;
+      grid-template-rows: auto auto 1fr auto auto auto;
+      column-gap: 18px;
+      row-gap: 8px;
+      align-items: start;
+    }
+
+    .swatch-large {
+      grid-row: 1 / span 4;
+      width: 126px;
+      height: 126px;
+      border-radius: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.22);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      margin-top: 6px;
+    }
+
+    .matched-line {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .matched-color {
+      font-size: 22px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .matched-sub {
+      font-size: 16px;
+      color: var(--text-dim);
+      line-height: 1.35;
+    }
+
+    .progress-wrap {
+      grid-column: 1 / -1;
+      margin-top: 4px;
+    }
+
+    .progress-label {
+      font-size: 18px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .progress {
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(51, 153, 255, 0.7), rgba(51, 153, 255, 1));
+    }
+
+    .tag-unknown {
+      height: 100%;
+      padding: 22px 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+    }
+
+    .warning-title {
+      color: var(--warning);
+      font-size: 34px;
+      font-weight: 800;
+      margin-top: 24px;
+    }
+
+    .tag-button,
+    .confirm-button {
+      border: none;
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      position: absolute;
+    }
+
+    .tag-button {
+      width: 160px;
+      height: 50px;
+      left: 160px;
+      top: 250px;
+      background: var(--accent);
+    }
+
+    .tag-button.pressed,
+    .confirm-button.pressed {
+      transform: scale(0.985);
+      filter: brightness(1.15);
+    }
+
+    .wizard {
+      height: 100%;
+      position: relative;
+      padding: 14px 14px 10px;
+      text-align: center;
+    }
+
+    .wizard-title {
+      font-size: 26px;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .wizard-step {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-top: 2px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .picker-list {
+      height: 214px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .picker-prev,
+    .picker-next {
+      font-size: 24px;
+      color: var(--text-dim);
+      opacity: 0.85;
+    }
+
+    .picker-current {
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1.05;
+      max-width: 92%;
+    }
+
+    .picker-help,
+    .settings-help,
+    .result-help {
+      font-size: 12px;
+      color: var(--text-dim);
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      right: 0;
+    }
+
+    .color-grid {
+      width: 452px;
+      margin: 12px auto 0;
+      display: grid;
+      grid-template-columns: repeat(6, 72px);
+      grid-template-rows: repeat(4, 55px);
+      gap: 4px;
+      justify-content: center;
+    }
+
+    .color-tile {
+      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+    }
+
+    .color-tile.selected {
+      border-color: var(--text);
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.12);
+    }
+
+    .color-tile.pressed {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 2px rgba(51, 153, 255, 0.4);
+    }
+
+    .color-name {
+      margin-top: 8px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .confirm-screen {
+      height: 100%;
+      padding: 14px 22px 10px;
+      position: relative;
+    }
+
+    .confirm-screen .wizard-title {
+      text-align: center;
+      margin-top: 2px;
+      font-size: 24px;
+    }
+
+    .confirm-table {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      row-gap: 10px;
+      column-gap: 12px;
+      font-size: 16px;
+      align-items: center;
+    }
+
+    .confirm-label {
+      color: var(--text-dim);
+    }
+
+    .confirm-value {
+      font-weight: 600;
+    }
+
+    .confirm-value.success { color: var(--success); }
+    .confirm-value.warning { color: var(--warning); }
+
+    .mini-swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    .confirm-actions {
+      position: absolute;
+      left: 34px;
+      right: 34px;
+      bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .confirm-button {
+      position: relative;
+      width: 180px;
+      height: 42px;
+      font-size: 19px;
+    }
+
+    .confirm-button.cancel { background: rgba(255, 0, 0, 0.85); }
+    .confirm-button.register { background: rgba(0, 255, 0, 0.68); color: #041604; }
+
+    .confirm-note {
+      color: var(--text-dim);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .register-overlay {
+      position: absolute;
+      inset: 32px 18px 18px;
+      border-radius: 16px;
+      background: rgba(16, 16, 16, 0.92);
+      border: 1px solid rgba(51, 153, 255, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 12;
+    }
+
+    .result-screen {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+      padding: 16px 28px;
+    }
+
+    .result-icon {
+      font-size: 68px;
+      line-height: 1;
+    }
+
+    .result-icon.success { color: var(--success); }
+    .result-icon.error { color: var(--error); }
+
+    .result-summary {
+      color: var(--text-dim);
+      font-size: 16px;
+      line-height: 1.45;
+      max-width: 360px;
+    }
+
+    .settings-screen,
+    .info-screen {
+      height: 100%;
+      padding: 10px 14px 12px;
+      position: relative;
+    }
+
+    .settings-header,
+    .info-header {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .settings-header h2,
+    .info-header h2 {
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .settings-list,
+    .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .settings-item,
+    .info-item {
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 9px 12px;
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .settings-item-label,
+    .info-item-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .settings-item-value,
+    .info-item-value {
+      font-size: 13px;
+      color: var(--text-dim);
+      text-align: right;
+      line-height: 1.25;
+      max-width: 230px;
+      word-break: break-word;
+    }
+
+    .brightness-bar {
+      width: 120px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      margin-top: 6px;
+      margin-left: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .brightness-fill {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255, 153, 0, 0.7), rgba(255, 255, 255, 0.95));
+    }
+
+    .assign-screen {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 12px;
+      padding: 24px 44px;
+    }
+
+    .assign-icon {
+      font-size: 56px;
+      line-height: 1;
+      color: var(--accent);
+    }
+
+    .error-screen {
+      height: 100%;
+      background: linear-gradient(180deg, rgba(248, 0, 0, 0.25), rgba(80, 0, 0, 0.7));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 18px 36px;
+      gap: 12px;
+    }
+
+    .error-title {
+      color: var(--text);
+    }
+
+    .error-message {
+      font-size: 22px;
+      font-weight: 700;
+      max-width: 360px;
+    }
+
+    .ota-screen,
+    .provision-screen {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 12px;
+      padding: 24px 28px;
+    }
+
+    .ota-screen .progress {
+      width: 360px;
+      height: 24px;
+    }
+
+    .ota-percent {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .ap-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--warning);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .ap-indicator::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--warning);
+      box-shadow: 0 0 10px rgba(255, 153, 0, 0.45);
+    }
+
+    .touch-feedback {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(51, 153, 255, 0.85);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 30;
+      box-shadow: 0 0 0 8px rgba(51, 153, 255, 0.12);
+    }
+
+    .log-panel,
+    .side-panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+    }
+
+    .log-panel {
+      width: min(100%, 920px);
+      padding: 16px 16px 14px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .panel-header h3 {
+      font-size: 18px;
+      letter-spacing: 0.02em;
+    }
+
+    .panel-header span {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    #event-log {
+      height: 220px;
+      overflow: auto;
+      padding-right: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .log-entry {
+      color: #d6dbe4;
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 3px solid rgba(255, 255, 255, 0.16);
+      padding: 7px 10px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .log-entry.state { border-left-color: var(--accent); }
+    .log-entry.api { border-left-color: var(--success); }
+    .log-entry.warn { border-left-color: var(--warning); }
+    .log-entry.error { border-left-color: var(--error); }
+
+    .side-panel {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: sticky;
+      top: 28px;
+    }
+
+    .control-section {
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-section h4 {
+      font-size: 15px;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-inline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    label,
+    .field-label {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    input[type="range"],
+    input[type="text"],
+    select,
+    button {
+      width: 100%;
+    }
+
+    input[type="range"] {
+      accent-color: var(--accent);
+    }
+
+    input[type="text"],
+    select {
+      background: #0c1016;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text);
+      padding: 9px 10px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    button {
+      background: #182331;
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d2a3b;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .small-readout {
+      font-size: 12px;
+      color: var(--text-dim);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .tag-row,
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .action-grid button:nth-child(3),
+    .action-grid button:nth-child(4) {
+      background: #241b12;
+    }
+
+    .action-grid button:nth-child(3):hover,
+    .action-grid button:nth-child(4):hover {
+      background: #2b2118;
+    }
+
+    .neo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .neo-indicator {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: #0f0;
+      box-shadow: 0 0 14px rgba(0, 255, 0, 0.35);
+      flex: none;
+    }
+
+    .footnote {
+      color: var(--text-dim);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 1400px) {
+      :root { --display-scale: 1.5; }
+      .layout { grid-template-columns: 1fr; }
+      .side-panel { position: static; }
+    }
+
+    @media (max-width: 980px) {
+      body { padding: 14px; }
+      :root { --display-scale: 1.15; }
+      .display-shell {
+        width: calc((480px + 28px) * var(--display-scale));
+        height: calc((320px + 28px) * var(--display-scale));
+      }
+      .log-panel { width: 100%; }
+      #event-log { height: 180px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="layout">
+      <div class="main-column">
+        <div class="display-shell">
+          <div class="display-visual">
+            <div id="display" aria-label="SpoolBuddy display simulator">
+              <div id="screen-root"></div>
+            </div>
+          </div>
+        </div>
+
+        <section class="log-panel">
+          <div class="panel-header">
+            <h3>Event Log</h3>
+            <span>Touch events, state changes, API calls</span>
+          </div>
+          <div id="event-log"></div>
+        </section>
+      </div>
+
+      <aside class="side-panel">
+        <div class="panel-header">
+          <h3>Hardware State</h3>
+          <span>Interactive simulator controls</span>
+        </div>
+
+        <section class="control-section">
+          <h4>Scale</h4>
+          <div class="field">
+            <label for="scale-slider">Scale weight <span id="scale-slider-label">832.5g raw</span></label>
+            <input id="scale-slider" type="range" min="0" max="3000" step="0.5" value="832.5">
+          </div>
+          <label class="toggle">
+            <input id="scale-stable" type="checkbox" checked>
+            <span>Stable</span>
+          </label>
+          <div class="small-readout" id="scale-readout">Displayed: 832.5 g</div>
+          <div class="small-readout" id="tare-readout">Tare offset: 0.0 g</div>
+        </section>
+
+        <section class="control-section">
+          <h4>NFC</h4>
+          <div class="field">
+            <label for="tag-select">Simulated tag</label>
+            <select id="tag-select">
+              <option value="NONE">None</option>
+              <option value="ISO14443A">ISO14443A Tag</option>
+              <option value="BAMBU">Bambu Lab Tag</option>
+            </select>
+          </div>
+          <div class="tag-row">
+            <div class="field">
+              <span class="field-label">Tag UID</span>
+              <div class="small-readout" id="tag-uid">—</div>
+            </div>
+            <div class="field">
+              <span class="field-label">Tag Type</span>
+              <div class="small-readout" id="tag-type">No tag present</div>
+            </div>
+          </div>
+          <button id="new-tag-btn" type="button">Generate New UID / Rescan</button>
+        </section>
+
+        <section class="control-section">
+          <h4>Connectivity</h4>
+          <label class="toggle">
+            <input id="wifi-toggle" type="checkbox" checked>
+            <span>WiFi connected</span>
+          </label>
+          <label class="toggle">
+            <input id="backend-toggle" type="checkbox" checked>
+            <span>Backend connected</span>
+          </label>
+          <div class="field">
+            <label for="server-url">Server URL</label>
+            <input id="server-url" type="text" value="http://bambuddy.local" spellcheck="false">
+          </div>
+        </section>
+
+        <section class="control-section">
+          <h4>Display + NeoPixel</h4>
+          <div class="field">
+            <label for="brightness-slider">Brightness <span id="brightness-label">100%</span></label>
+            <input id="brightness-slider" type="range" min="20" max="100" step="1" value="100">
+          </div>
+          <div class="neo-wrap">
+            <div id="neo-indicator" class="neo-indicator"></div>
+            <div>
+              <div class="field-label">NeoPixel</div>
+              <div id="neo-label" class="small-readout">#00FF00</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="control-section">
+          <h4>Simulator Actions</h4>
+          <div class="action-grid">
+            <button id="reboot-btn" type="button">Reboot</button>
+            <button id="ota-btn" type="button">Start OTA</button>
+            <button id="provision-btn" type="button">Show Provisioning</button>
+            <button id="error-btn" type="button">Trigger Error</button>
+          </div>
+        </section>
+
+        <div class="footnote">
+          Click to tap. Click + drag to swipe. Hold for ~0.85s to long-press. Display coordinates always map to the native 480×320 touchscreen.
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = {
+      bg: '#101010',
+      statusBg: '#202020',
+      text: '#FFFFFF',
+      textDim: '#808080',
+      accent: '#3399FF',
+      success: '#00FF00',
+      warning: '#FF9900',
+      error: '#FF0000'
+    };
+
+    const AppState = Object.freeze({
+      Boot: 'Boot',
+      Provisioning: 'Provisioning',
+      Connecting: 'Connecting',
+      Home: 'Home',
+      Scale: 'Scale',
+      Info: 'Info',
+      Settings: 'Settings',
+      TagRead: 'TagRead',
+      TagMatched: 'TagMatched',
+      TagUnknown: 'TagUnknown',
+      Register: 'Register',
+      Ota: 'Ota',
+      Error: 'Error'
+    });
+
+    const View = Object.freeze({
+      BOOT: 'BOOT',
+      CONNECTING: 'CONNECTING',
+      HOME: 'HOME',
+      SCALE: 'SCALE',
+      INFO: 'INFO',
+      SETTINGS: 'SETTINGS',
+      ASSIGN: 'ASSIGN',
+      TAG_READ: 'TAG_READ',
+      TAG_MATCHED: 'TAG_MATCHED',
+      TAG_UNKNOWN: 'TAG_UNKNOWN',
+      REGISTER_MATERIAL: 'REGISTER_MATERIAL',
+      REGISTER_BRAND: 'REGISTER_BRAND',
+      REGISTER_COLOR: 'REGISTER_COLOR',
+      REGISTER_WEIGHT: 'REGISTER_WEIGHT',
+      REGISTER_CONFIRM: 'REGISTER_CONFIRM',
+      REGISTER_RESULT: 'REGISTER_RESULT',
+      OTA: 'OTA',
+      ERROR: 'ERROR',
+      PROVISIONING: 'PROVISIONING'
+    });
+
+    const MATERIALS = ['PLA', 'PETG', 'ABS', 'ASA', 'TPU', 'PA/Nylon', 'PC', 'PVA', 'HIPS', 'PLA-CF', 'PETG-CF', 'PA-CF'];
+    const BRANDS = ['Bambu Lab', 'eSUN', 'Hatchbox', 'Polymaker', 'Prusament', 'Overture', 'SUNLU', 'Inland', 'Generic'];
+    const LABEL_WEIGHTS = [250, 500, 750, 1000, 2000, 3000];
+    const CORE_WEIGHT = 250;
+    const HOME_TILE_RECTS = [
+      { id: 'SCALE', x: 12, y: 44, w: 144, h: 126 },
+      { id: 'SCAN', x: 168, y: 44, w: 144, h: 126 },
+      { id: 'ASSIGN', x: 324, y: 44, w: 144, h: 126 },
+      { id: 'TARE', x: 12, y: 182, w: 144, h: 126 },
+      { id: 'INFO', x: 168, y: 182, w: 144, h: 126 },
+      { id: 'SETTINGS', x: 324, y: 182, w: 144, h: 126 }
+    ];
+    const TAG_REGISTER_RECT = { x: 160, y: 250, w: 160, h: 50 };
+    const REG_CONFIRM_CANCEL_RECT = { x: 34, y: 266, w: 180, h: 42 };
+    const REG_CONFIRM_REGISTER_RECT = { x: 266, y: 266, w: 180, h: 42 };
+    const COLOR_GRID = { x0: 14, y0: 72, cols: 6, rows: 4, w: 72, h: 55, gap: 4 };
+
+    const COLOR_CHOICES = [
+      { name: 'Black', hex: '#000000' },
+      { name: 'White', hex: '#FFFFFF' },
+      { name: 'Gray', hex: '#808080' },
+      { name: 'Silver', hex: '#C0C0C0' },
+      { name: 'Red', hex: '#FF0000' },
+      { name: 'Dark Red', hex: '#8B0000' },
+      { name: 'Orange', hex: '#FF8C00' },
+      { name: 'Yellow', hex: '#FFD700' },
+      { name: 'Green', hex: '#008000' },
+      { name: 'Lime', hex: '#32CD32' },
+      { name: 'Teal', hex: '#008080' },
+      { name: 'Olive', hex: '#808000' },
+      { name: 'Blue', hex: '#0000FF' },
+      { name: 'Navy', hex: '#000080' },
+      { name: 'Cyan', hex: '#00FFFF' },
+      { name: 'Sky Blue', hex: '#87CEEB' },
+      { name: 'Purple', hex: '#800080' },
+      { name: 'Violet', hex: '#EE82EE' },
+      { name: 'Magenta', hex: '#FF00FF' },
+      { name: 'Pink', hex: '#FFB6C1' },
+      { name: 'Brown', hex: '#8B4513' },
+      { name: 'Tan', hex: '#D2B48C' },
+      { name: 'Gold', hex: '#FFD700' },
+      { name: 'Transparent', hex: 'linear-gradient(135deg, #f0f0f0 0 46%, #d0d0d0 46% 54%, #ffffff 54% 100%)' }
+    ];
+
+    const SAMPLE_SPOOLS = [
+      { material: 'PLA', brand: 'Bambu Lab', colorName: 'Red', colorHex: '#FF3B30', labelWeight: 1000, weightUsed: 245 },
+      { material: 'PETG', brand: 'Polymaker', colorName: 'Cyan', colorHex: '#00D6FF', labelWeight: 1000, weightUsed: 510 },
+      { material: 'ABS', brand: 'eSUN', colorName: 'Black', colorHex: '#111111', labelWeight: 1000, weightUsed: 180 },
+      { material: 'PLA-CF', brand: 'Prusament', colorName: 'Gray', colorHex: '#7A7A7A', labelWeight: 1000, weightUsed: 360 },
+      { material: 'TPU', brand: 'SUNLU', colorName: 'Yellow', colorHex: '#FFD400', labelWeight: 750, weightUsed: 210 },
+      { material: 'PETG-CF', brand: 'Bambu Lab', colorName: 'Blue', colorHex: '#006DFF', labelWeight: 1000, weightUsed: 600 }
+    ];
+
+    const displayEl = document.getElementById('display');
+    const screenRoot = document.getElementById('screen-root');
+    const logEl = document.getElementById('event-log');
+    const scaleSlider = document.getElementById('scale-slider');
+    const scaleSliderLabel = document.getElementById('scale-slider-label');
+    const scaleStableInput = document.getElementById('scale-stable');
+    const wifiToggle = document.getElementById('wifi-toggle');
+    const backendToggle = document.getElementById('backend-toggle');
+    const serverUrlInput = document.getElementById('server-url');
+    const tagSelect = document.getElementById('tag-select');
+    const newTagBtn = document.getElementById('new-tag-btn');
+    const brightnessSlider = document.getElementById('brightness-slider');
+    const brightnessLabel = document.getElementById('brightness-label');
+    const tagUidEl = document.getElementById('tag-uid');
+    const tagTypeEl = document.getElementById('tag-type');
+    const scaleReadoutEl = document.getElementById('scale-readout');
+    const tareReadoutEl = document.getElementById('tare-readout');
+    const neoIndicatorEl = document.getElementById('neo-indicator');
+    const neoLabelEl = document.getElementById('neo-label');
+    const rebootBtn = document.getElementById('reboot-btn');
+    const otaBtn = document.getElementById('ota-btn');
+    const provisionBtn = document.getElementById('provision-btn');
+    const errorBtn = document.getElementById('error-btn');
+
+    const timers = {};
+
+    const state = {
+      appState: AppState.Boot,
+      view: View.BOOT,
+      ssid: 'BambuBuddy Lab',
+      ip: '192.168.4.77',
+      rssi: -54,
+      wifiConnected: true,
+      backendConnected: true,
+      serverUrl: 'http://bambuddy.local',
+      deviceId: `spoolbuddy-${Math.floor(Math.random() * 0xffffff).toString(16).toUpperCase().padStart(6, '0')}`,
+      rawWeight: 832.5,
+      tareOffset: 0,
+      displayedWeight: 832.5,
+      scaleStable: true,
+      scaleHealthy: true,
+      nfcHealthy: true,
+      brightness: 100,
+      tick: 0,
+      startedAt: Date.now(),
+      homePress: null,
+      pressedTarget: null,
+      touchFeedback: null,
+      nfcTagKind: 'NONE',
+      currentTagUid: '',
+      currentTagTypeLabel: 'No tag present',
+      currentTagTech: 'No tag present',
+      activeTagUid: '',
+      activeTagKind: 'NONE',
+      lookupPending: false,
+      tagReadMessage: 'Looking up spool...',
+      waitingForTag: false,
+      scanArmed: true,
+      currentSpool: null,
+      weightHistory: Array.from({ length: 20 }, () => 0),
+      settingsScroll: 0,
+      errorMessage: 'Simulated error',
+      ota: { running: false, progress: 0, targetVersion: 'v0.5.1' },
+      infoMode: 'device',
+      neoPixel: '#00FF00',
+      register: {
+        step: 'material',
+        tagUid: '',
+        materialIndex: 0,
+        brandIndex: 0,
+        colorIndex: 4,
+        weightIndex: 3,
+        submitting: false,
+        result: null,
+        message: ''
+      },
+      registeredSpools: Object.create(null)
+    };
+
+    function esc(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function schedule(name, delay, fn) {
+      clearScheduled(name);
+      timers[name] = window.setTimeout(() => {
+        delete timers[name];
+        fn();
+      }, delay);
+    }
+
+    function clearScheduled(name) {
+      if (timers[name]) {
+        window.clearTimeout(timers[name]);
+        delete timers[name];
+      }
+    }
+
+    function clearViewTimers() {
+      ['boot', 'connect', 'lookup', 'matchedReturn', 'registerResult', 'registerSubmit', 'provisionConnect', 'otaAdvance', 'errorDismiss'].forEach(clearScheduled);
+    }
+
+    function nowStamp() {
+      return new Date().toTimeString().slice(0, 8);
+    }
+
+    function logEvent(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${nowStamp()}] ${message}`;
+      logEl.prepend(entry);
+      while (logEl.children.length > 60) {
+        logEl.removeChild(logEl.lastChild);
+      }
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function wrapIndex(index, length) {
+      return ((index % length) + length) % length;
+    }
+
+    function formatWeight(weight, digits = 1) {
+      return Number(weight).toFixed(digits);
+    }
+
+    function formatWeightCompact(weight) {
+      return weight >= 100 ? `${Math.round(weight)}g` : `${weight.toFixed(1)}g`;
+    }
+
+    function formatDuration(ms) {
+      const total = Math.floor(ms / 1000);
+      const hours = Math.floor(total / 3600);
+      const minutes = Math.floor((total % 3600) / 60);
+      const seconds = total % 60;
+      if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+      if (minutes > 0) return `${minutes}m ${seconds}s`;
+      return `${seconds}s`;
+    }
+
+    function hashString(value) {
+      let hash = 0;
+      for (let i = 0; i < value.length; i += 1) {
+        hash = ((hash << 5) - hash + value.charCodeAt(i)) >>> 0;
+      }
+      return hash;
+    }
+
+    function generateUid(kind) {
+      const prefix = kind === 'BAMBU' ? '04' : '08';
+      let uid = prefix;
+      while (uid.length < 14) {
+        uid += Math.floor(Math.random() * 16).toString(16).toUpperCase();
+      }
+      return uid;
+    }
+
+    function tagTypeLabel(kind) {
+      if (kind === 'BAMBU') return 'Bambu Lab Tag';
+      if (kind === 'ISO14443A') return 'ISO14443A Tag';
+      return 'No tag present';
+    }
+
+    function tagTechLabel(kind) {
+      if (kind === 'BAMBU') return 'Bambu Lab spool tag';
+      if (kind === 'ISO14443A') return 'ISO 14443-4 Type A';
+      return 'No tag present';
+    }
+
+    function currentWeight() {
+      const base = Math.max(0, state.rawWeight - state.tareOffset);
+      if (state.scaleStable) {
+        return base;
+      }
+      const wobble = Math.sin(Date.now() / 160) * 5.8 + (Math.random() - 0.5) * 7.5;
+      return Math.max(0, base + wobble);
+    }
+
+    function makeSampleSpool(uid) {
+      const sample = SAMPLE_SPOOLS[hashString(uid) % SAMPLE_SPOOLS.length];
+      const labelWeight = sample.labelWeight;
+      const weightUsed = clamp(sample.weightUsed + ((hashString(uid + 'used') % 180) - 90), 20, labelWeight - 20);
+      return {
+        uid,
+        material: sample.material,
+        brand: sample.brand,
+        colorName: sample.colorName,
+        colorHex: sample.colorHex,
+        labelWeight,
+        weightUsed,
+        coreWeight: CORE_WEIGHT
+      };
+    }
+
+    function lookupSpool(uid, kind) {
+      if (state.registeredSpools[uid]) {
+        return state.registeredSpools[uid];
+      }
+      if (kind === 'BAMBU') {
+        return makeSampleSpool(uid);
+      }
+      return null;
+    }
+
+    function currentRegisterColor() {
+      return COLOR_CHOICES[state.register.colorIndex];
+    }
+
+    function currentRegisterWeight() {
+      return LABEL_WEIGHTS[state.register.weightIndex];
+    }
+
+    function freeHeapKb() {
+      return Math.round(228 + Math.sin(Date.now() / 30000) * 18);
+    }
+
+    function wifiBars() {
+      if (!state.wifiConnected) return 1;
+      if (state.rssi > -55) return 4;
+      if (state.rssi > -68) return 3;
+      if (state.rssi > -78) return 2;
+      return 1;
+    }
+
+    function setNeoPixel(color) {
+      state.neoPixel = color;
+      neoIndicatorEl.style.background = color;
+      neoIndicatorEl.style.boxShadow = `0 0 14px ${color}66`;
+      neoLabelEl.textContent = color.toUpperCase();
+    }
+
+    function setView(view, appState, reason = '') {
+      const prevView = state.view;
+      const prevAppState = state.appState;
+      clearViewTimers();
+      state.view = view;
+      state.appState = appState;
+      state.homePress = null;
+      state.pressedTarget = null;
+      if (prevView !== view || prevAppState !== appState) {
+        const suffix = reason ? ` (${reason})` : '';
+        logEvent(`State ${prevView} → ${view}${suffix}`, 'state');
+      }
+      applyNeoForView();
+      onEnterView();
+      render();
+    }
+
+    function currentScreenName() {
+      return state.view;
+    }
+
+    function applyNeoForView() {
+      switch (state.view) {
+        case View.BOOT: setNeoPixel('#244CFF'); break;
+        case View.CONNECTING: setNeoPixel('#0066FF'); break;
+        case View.HOME:
+        case View.SCALE: setNeoPixel('#00C853'); break;
+        case View.TAG_READ: setNeoPixel('#00BCD4'); break;
+        case View.TAG_MATCHED: setNeoPixel('#00E676'); break;
+        case View.TAG_UNKNOWN: setNeoPixel('#FF9800'); break;
+        case View.PROVISIONING: setNeoPixel('#FFB300'); break;
+        case View.OTA: setNeoPixel('#C84DFF'); break;
+        case View.ERROR: setNeoPixel('#FF1744'); break;
+        case View.REGISTER_MATERIAL:
+        case View.REGISTER_BRAND:
+        case View.REGISTER_COLOR:
+        case View.REGISTER_WEIGHT:
+        case View.REGISTER_CONFIRM:
+        case View.REGISTER_RESULT: setNeoPixel('#00ACC1'); break;
+        case View.ASSIGN:
+        case View.INFO:
+        case View.SETTINGS: setNeoPixel('#40C4FF'); break;
+        default: setNeoPixel('#00FF00'); break;
+      }
+    }
+
+    function onEnterView() {
+      if (state.view === View.BOOT) {
+        schedule('boot', 2000, () => startConnecting('Boot complete'));
+      } else if (state.view === View.CONNECTING) {
+        schedule('connect', 2000, () => {
+          if (state.wifiConnected) {
+            goHome('WiFi connected');
+          } else {
+            showProvisioning('WiFi unavailable');
+          }
+        });
+      } else if (state.view === View.TAG_MATCHED) {
+        schedule('matchedReturn', 15000, () => goHome('Matched timeout'));
+      } else if (state.view === View.REGISTER_RESULT) {
+        schedule('registerResult', 3000, () => goHome('Registration result timeout'));
+      }
+    }
+
+    function reboot(reason = 'Manual reboot') {
+      if (state.ota.running) {
+        state.ota.running = false;
+      }
+      clearViewTimers();
+      state.currentSpool = null;
+      state.activeTagUid = '';
+      state.lookupPending = false;
+      state.waitingForTag = false;
+      state.scanArmed = true;
+      logEvent(`Rebooting simulator (${reason})`, 'warn');
+      setView(View.BOOT, AppState.Boot, reason);
+    }
+
+    function startConnecting(reason = 'Starting WiFi connection') {
+      setView(View.CONNECTING, AppState.Connecting, reason);
+    }
+
+    function goHome(reason = '') {
+      state.currentSpool = null;
+      setView(View.HOME, AppState.Home, reason || 'Return to home');
+      maybeAutoScan();
+    }
+
+    function showScale() {
+      setView(View.SCALE, AppState.Scale, 'Scale tile');
+      maybeAutoScan();
+    }
+
+    function showInfo() {
+      state.infoMode = 'device';
+      setView(View.INFO, AppState.Info, 'Info tile');
+    }
+
+    function showAssign() {
+      state.infoMode = 'assign';
+      setView(View.ASSIGN, AppState.Info, 'Assign tile');
+    }
+
+    function showSettings() {
+      setView(View.SETTINGS, AppState.Settings, 'Settings tile');
+    }
+
+    function showProvisioning(reason = 'Provisioning portal') {
+      setView(View.PROVISIONING, AppState.Provisioning, reason);
+    }
+
+    function showError(message, reason = 'Simulated error') {
+      state.errorMessage = message;
+      setView(View.ERROR, AppState.Error, reason);
+    }
+
+    function startOta() {
+      state.ota = { running: true, progress: 0, targetVersion: 'v0.5.1' };
+      logEvent(`API POST ${state.serverUrl}/api/devices/${state.deviceId}/ota → target=${state.ota.targetVersion}`, 'api');
+      setView(View.OTA, AppState.Ota, 'OTA requested');
+      advanceOta();
+    }
+
+    function advanceOta() {
+      if (!state.ota.running) {
+        return;
+      }
+      schedule('otaAdvance', 280, () => {
+        state.ota.progress = Math.min(100, state.ota.progress + Math.floor(Math.random() * 17) + 7);
+        render();
+        if (state.ota.progress >= 100) {
+          state.ota.running = false;
+          logEvent(`OTA complete → rebooting into ${state.ota.targetVersion}`, 'api');
+          schedule('otaAdvance', 650, () => reboot(`OTA ${state.ota.targetVersion}`));
+        } else {
+          advanceOta();
+        }
+      });
+    }
+
+    function tareScale(reason = 'Touch tare') {
+      state.tareOffset = state.rawWeight;
+      state.displayedWeight = 0;
+      logEvent(`Scale tared → tare offset ${formatWeight(state.tareOffset)}g (${reason})`, 'api');
+      render();
+    }
+
+    function startWaitingForTag() {
+      state.tagReadMessage = 'Hold tag on reader';
+      state.waitingForTag = true;
+      setView(View.TAG_READ, AppState.TagRead, 'Scan tile');
+      maybeAutoScan();
+    }
+
+    function handleHomeTileTap(tileId) {
+      if (tileId === 'SCALE') {
+        showScale();
+      } else if (tileId === 'SCAN') {
+        startWaitingForTag();
+      } else if (tileId === 'ASSIGN') {
+        showAssign();
+      } else if (tileId === 'TARE') {
+        tareScale('Tare tile');
+      } else if (tileId === 'INFO') {
+        showInfo();
+      } else if (tileId === 'SETTINGS') {
+        showSettings();
+      }
+    }
+
+    function startRegistration() {
+      state.register = {
+        step: 'material',
+        tagUid: state.activeTagUid || state.currentTagUid,
+        materialIndex: 0,
+        brandIndex: 0,
+        colorIndex: 4,
+        weightIndex: 3,
+        submitting: false,
+        result: null,
+        message: ''
+      };
+      logEvent(`Registration started for UID=${state.register.tagUid}`, 'state');
+      setView(View.REGISTER_MATERIAL, AppState.Register, 'Register unknown tag');
+    }
+
+    function gotoRegisterStep(step) {
+      state.register.step = step;
+      const viewByStep = {
+        material: View.REGISTER_MATERIAL,
+        brand: View.REGISTER_BRAND,
+        color: View.REGISTER_COLOR,
+        weight: View.REGISTER_WEIGHT,
+        confirm: View.REGISTER_CONFIRM,
+        result: View.REGISTER_RESULT
+      };
+      setView(viewByStep[step], AppState.Register, `Register ${step}`);
+    }
+
+    function submitRegistration() {
+      if (!state.register.tagUid) {
+        showError('No NFC tag selected', 'Register without tag');
+        return;
+      }
+      state.register.submitting = true;
+      render();
+      const color = currentRegisterColor();
+      const payload = {
+        uid: state.register.tagUid,
+        material: MATERIALS[state.register.materialIndex],
+        brand: BRANDS[state.register.brandIndex],
+        colorName: color.name,
+        colorHex: color.hex,
+        labelWeight: currentRegisterWeight(),
+        coreWeight: CORE_WEIGHT
+      };
+      logEvent(`API POST ${state.serverUrl}/api/spools/register ${JSON.stringify(payload)}`, 'api');
+      schedule('registerSubmit', 1000, () => {
+        state.register.submitting = false;
+        if (state.backendConnected) {
+          const registered = {
+            uid: payload.uid,
+            material: payload.material,
+            brand: payload.brand,
+            colorName: payload.colorName,
+            colorHex: payload.colorHex.startsWith('linear-gradient') ? '#F0F0F0' : payload.colorHex,
+            labelWeight: payload.labelWeight,
+            weightUsed: clamp(payload.labelWeight - Math.max(0, state.displayedWeight - CORE_WEIGHT), 0, payload.labelWeight),
+            coreWeight: CORE_WEIGHT
+          };
+          state.registeredSpools[payload.uid] = registered;
+          state.register.result = 'success';
+          state.register.message = 'Spool Registered!';
+          logEvent(`Registration successful for UID=${payload.uid}`, 'api');
+        } else {
+          state.register.result = 'failure';
+          state.register.message = 'Registration failed: backend unavailable';
+          logEvent(`Registration failed for UID=${payload.uid} (backend disconnected)`, 'error');
+        }
+        gotoRegisterStep('result');
+      });
+    }
+
+    function handleTagSelection(kind, source = 'manual') {
+      state.nfcTagKind = kind;
+      if (kind === 'NONE') {
+        state.currentTagUid = '';
+        state.currentTagTypeLabel = tagTypeLabel(kind);
+        state.currentTagTech = tagTechLabel(kind);
+        state.activeTagUid = '';
+        state.activeTagKind = 'NONE';
+        state.scanArmed = true;
+        logEvent('Tag removed from reader', 'warn');
+        if ([View.TAG_READ, View.TAG_MATCHED, View.TAG_UNKNOWN].includes(state.view)) {
+          goHome('Tag removed');
+        } else {
+          render();
+        }
+        return;
+      }
+
+      state.currentTagUid = generateUid(kind);
+      state.currentTagTypeLabel = tagTypeLabel(kind);
+      state.currentTagTech = tagTechLabel(kind);
+      state.scanArmed = true;
+      logEvent(`Tag detected: UID=${state.currentTagUid} (${state.currentTagTypeLabel}, ${source})`, 'api');
+      render();
+      maybeAutoScan(true);
+    }
+
+    function maybeAutoScan(force = false) {
+      if (!state.currentTagUid || state.nfcTagKind === 'NONE') {
+        return;
+      }
+      if (!force && !state.scanArmed) {
+        return;
+      }
+      const scanViews = new Set([View.HOME, View.SCALE, View.INFO, View.SETTINGS, View.ASSIGN, View.TAG_READ]);
+      if (!scanViews.has(state.view)) {
+        return;
+      }
+      beginTagLookup();
+    }
+
+    function beginTagLookup() {
+      if (!state.currentTagUid || !state.scanArmed || state.view === View.OTA || state.appState === AppState.Register) {
+        return;
+      }
+      state.scanArmed = false;
+      state.activeTagUid = state.currentTagUid;
+      state.activeTagKind = state.nfcTagKind;
+      state.tagReadMessage = 'Looking up spool...';
+      state.waitingForTag = false;
+      state.lookupPending = true;
+      setView(View.TAG_READ, AppState.TagRead, 'NFC lookup');
+      logEvent(`API GET ${state.serverUrl}/api/spools/lookup?uid=${state.activeTagUid}`, 'api');
+      schedule('lookup', 1000, finishTagLookup);
+    }
+
+    function finishTagLookup() {
+      state.lookupPending = false;
+      if (!state.backendConnected) {
+        showError('Spool lookup failed', 'Backend unavailable');
+        return;
+      }
+      const spool = lookupSpool(state.activeTagUid, state.activeTagKind);
+      if (spool) {
+        state.currentSpool = spool;
+        setView(View.TAG_MATCHED, AppState.TagMatched, 'Tag matched');
+        logEvent(`Lookup matched ${spool.material} / ${spool.brand} / ${spool.colorName}`, 'api');
+        if (state.scaleStable) {
+          const net = Math.max(0, state.displayedWeight - CORE_WEIGHT);
+          logEvent(`API POST ${state.serverUrl}/api/spools/${state.activeTagUid}/weight { scale: ${Math.round(state.displayedWeight)}g, net: ${Math.round(net)}g }`, 'api');
+        }
+      } else {
+        state.currentSpool = null;
+        setView(View.TAG_UNKNOWN, AppState.TagUnknown, 'Tag unknown');
+        logEvent(`Lookup returned unknown tag UID=${state.activeTagUid}`, 'warn');
+      }
+    }
+
+    function mapPoint(event) {
+      const rect = displayEl.getBoundingClientRect();
+      const x = clamp(Math.round(((event.clientX - rect.left) / rect.width) * 480), 0, 479);
+      const y = clamp(Math.round(((event.clientY - rect.top) / rect.height) * 320), 0, 319);
+      return { x, y };
+    }
+
+    function homeTileAt(point) {
+      return HOME_TILE_RECTS.find((tile) => point.x >= tile.x && point.x < tile.x + tile.w && point.y >= tile.y && point.y < tile.y + tile.h) || null;
+    }
+
+    function colorTileAt(point) {
+      if (point.x < COLOR_GRID.x0 || point.y < COLOR_GRID.y0) {
+        return -1;
+      }
+      const relX = point.x - COLOR_GRID.x0;
+      const relY = point.y - COLOR_GRID.y0;
+      const spanW = COLOR_GRID.w + COLOR_GRID.gap;
+      const spanH = COLOR_GRID.h + COLOR_GRID.gap;
+      const col = Math.floor(relX / spanW);
+      const row = Math.floor(relY / spanH);
+      if (col < 0 || col >= COLOR_GRID.cols || row < 0 || row >= COLOR_GRID.rows) {
+        return -1;
+      }
+      if ((relX % spanW) >= COLOR_GRID.w || (relY % spanH) >= COLOR_GRID.h) {
+        return -1;
+      }
+      const index = row * COLOR_GRID.cols + col;
+      return index < COLOR_CHOICES.length ? index : -1;
+    }
+
+    function pointInRect(point, rect) {
+      return point.x >= rect.x && point.x < rect.x + rect.w && point.y >= rect.y && point.y < rect.y + rect.h;
+    }
+
+    function pressedTargetAt(point) {
+      if (state.view === View.HOME) {
+        const tile = homeTileAt(point);
+        return tile ? `tile:${tile.id}` : null;
+      }
+      if (state.view === View.TAG_UNKNOWN && pointInRect(point, TAG_REGISTER_RECT)) {
+        return 'register';
+      }
+      if (state.view === View.REGISTER_COLOR) {
+        const idx = colorTileAt(point);
+        return idx >= 0 ? `color:${idx}` : null;
+      }
+      if (state.view === View.REGISTER_CONFIRM) {
+        if (pointInRect(point, REG_CONFIRM_CANCEL_RECT)) return 'cancel';
+        if (pointInRect(point, REG_CONFIRM_REGISTER_RECT)) return 'registerConfirm';
+      }
+      return null;
+    }
+
+    let activePointer = null;
+    const SWIPE_MIN = 40;
+    const LONG_PRESS_MS = 850;
+
+    displayEl.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      const point = mapPoint(event);
+      activePointer = {
+        id: event.pointerId,
+        start: point,
+        last: point,
+        startedAt: Date.now()
+      };
+      state.pressedTarget = pressedTargetAt(point);
+      displayEl.setPointerCapture(event.pointerId);
+      render();
+    });
+
+    displayEl.addEventListener('pointermove', (event) => {
+      if (!activePointer || activePointer.id !== event.pointerId) {
+        return;
+      }
+      activePointer.last = mapPoint(event);
+      state.pressedTarget = pressedTargetAt(activePointer.last);
+      render();
+    });
+
+    function finishPointer(event, cancelled = false) {
+      if (!activePointer || activePointer.id !== event.pointerId) {
+        return;
+      }
+      const end = mapPoint(event);
+      const start = activePointer.start;
+      const duration = Date.now() - activePointer.startedAt;
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const adx = Math.abs(dx);
+      const ady = Math.abs(dy);
+      activePointer = null;
+      state.touchFeedback = cancelled ? null : { x: end.x, y: end.y, until: Date.now() + 180 };
+      const previousTarget = state.pressedTarget;
+      state.pressedTarget = null;
+      render();
+      if (cancelled) {
+        return;
+      }
+
+      let gesture = 'TAP';
+      if (adx > SWIPE_MIN || ady > SWIPE_MIN) {
+        if (adx > ady) {
+          gesture = dx > 0 ? 'SWIPE_RIGHT' : 'SWIPE_LEFT';
+        } else {
+          gesture = dy > 0 ? 'SWIPE_DOWN' : 'SWIPE_UP';
+        }
+      } else if (duration >= LONG_PRESS_MS) {
+        gesture = 'LONG_PRESS';
+      }
+
+      if (gesture === 'TAP') {
+        logEvent(`TAP at (${end.x}, ${end.y}) → Screen: ${currentScreenName()}`, 'state');
+      } else if (gesture === 'LONG_PRESS') {
+        logEvent(`LONG_PRESS at (${end.x}, ${end.y}) → Screen: ${currentScreenName()}`, 'state');
+      } else {
+        logEvent(`${gesture} from (${start.x}, ${start.y}) to (${end.x}, ${end.y}) → Screen: ${currentScreenName()}`, 'state');
+      }
+
+      handleGesture(gesture, end, start, previousTarget);
+    }
+
+    displayEl.addEventListener('pointerup', (event) => finishPointer(event, false));
+    displayEl.addEventListener('pointercancel', (event) => finishPointer(event, true));
+
+    function handleGesture(gesture, point, start, pressTarget) {
+      switch (state.view) {
+        case View.HOME: {
+          if (gesture === 'LONG_PRESS') {
+            tareScale('Long press on home');
+            return;
+          }
+          if (gesture === 'TAP') {
+            const tile = homeTileAt(point);
+            if (tile) handleHomeTileTap(tile.id);
+          }
+          return;
+        }
+        case View.SCALE:
+          if (gesture === 'LONG_PRESS') {
+            tareScale('Long press on scale');
+          } else if (gesture === 'TAP' || gesture === 'SWIPE_LEFT' || gesture === 'SWIPE_RIGHT') {
+            goHome('Dismiss scale');
+          }
+          return;
+        case View.INFO:
+        case View.ASSIGN:
+          if (gesture === 'TAP' || gesture === 'SWIPE_LEFT' || gesture === 'SWIPE_RIGHT') {
+            goHome('Dismiss info');
+          }
+          return;
+        case View.SETTINGS:
+          if (gesture === 'SWIPE_UP') {
+            state.settingsScroll = clamp(state.settingsScroll + 1, 0, 2);
+            render();
+          } else if (gesture === 'SWIPE_DOWN') {
+            state.settingsScroll = clamp(state.settingsScroll - 1, 0, 2);
+            render();
+          } else if (gesture === 'LONG_PRESS') {
+            showProvisioning('Settings long press');
+          } else if (gesture === 'TAP' || gesture === 'SWIPE_LEFT' || gesture === 'SWIPE_RIGHT') {
+            goHome('Dismiss settings');
+          }
+          return;
+        case View.TAG_READ:
+          if (gesture === 'TAP' && !state.lookupPending) {
+            goHome('Dismiss scan');
+          }
+          return;
+        case View.TAG_MATCHED:
+          if (gesture === 'TAP' || gesture === 'SWIPE_LEFT' || gesture === 'SWIPE_RIGHT') {
+            goHome('Dismiss match');
+          }
+          return;
+        case View.TAG_UNKNOWN:
+          if (gesture === 'TAP' && pointInRect(point, TAG_REGISTER_RECT)) {
+            startRegistration();
+          } else if (gesture === 'TAP' || gesture === 'SWIPE_LEFT' || gesture === 'SWIPE_RIGHT') {
+            goHome('Dismiss unknown tag');
+          }
+          return;
+        case View.REGISTER_MATERIAL:
+          if (gesture === 'SWIPE_UP') {
+            state.register.materialIndex = wrapIndex(state.register.materialIndex + 1, MATERIALS.length);
+            render();
+          } else if (gesture === 'SWIPE_DOWN') {
+            state.register.materialIndex = wrapIndex(state.register.materialIndex - 1, MATERIALS.length);
+            render();
+          } else if (gesture === 'TAP') {
+            gotoRegisterStep('brand');
+          }
+          return;
+        case View.REGISTER_BRAND:
+          if (gesture === 'SWIPE_UP') {
+            state.register.brandIndex = wrapIndex(state.register.brandIndex + 1, BRANDS.length);
+            render();
+          } else if (gesture === 'SWIPE_DOWN') {
+            state.register.brandIndex = wrapIndex(state.register.brandIndex - 1, BRANDS.length);
+            render();
+          } else if (gesture === 'TAP') {
+            gotoRegisterStep('color');
+          }
+          return;
+        case View.REGISTER_COLOR:
+          if (gesture === 'TAP') {
+            const index = colorTileAt(point);
+            if (index >= 0) {
+              state.register.colorIndex = index;
+              gotoRegisterStep('weight');
+            }
+          }
+          return;
+        case View.REGISTER_WEIGHT:
+          if (gesture === 'SWIPE_UP') {
+            state.register.weightIndex = wrapIndex(state.register.weightIndex + 1, LABEL_WEIGHTS.length);
+            render();
+          } else if (gesture === 'SWIPE_DOWN') {
+            state.register.weightIndex = wrapIndex(state.register.weightIndex - 1, LABEL_WEIGHTS.length);
+            render();
+          } else if (gesture === 'TAP') {
+            gotoRegisterStep('confirm');
+          }
+          return;
+        case View.REGISTER_CONFIRM:
+          if (gesture === 'TAP') {
+            if (pointInRect(point, REG_CONFIRM_CANCEL_RECT)) {
+              goHome('Registration cancelled');
+            } else if (pointInRect(point, REG_CONFIRM_REGISTER_RECT)) {
+              submitRegistration();
+            }
+          }
+          return;
+        case View.REGISTER_RESULT:
+          if (gesture === 'TAP') {
+            goHome('Dismiss registration result');
+          }
+          return;
+        case View.ERROR:
+          if (gesture === 'TAP' || gesture === 'SWIPE_LEFT' || gesture === 'SWIPE_RIGHT') {
+            goHome('Dismiss error');
+          }
+          return;
+        case View.PROVISIONING:
+          if (gesture === 'TAP' && state.wifiConnected) {
+            startConnecting('Provisioned network');
+          }
+          return;
+        case View.OTA:
+          return;
+        default:
+          return;
+      }
+    }
+
+    function renderStatusBar() {
+      const bars = wifiBars();
+      const wifiClass = state.wifiConnected ? (bars >= 3 ? 'online' : 'online warning') : 'offline';
+      return `
+        <div class="status-bar">
+          <div class="status-left">
+            <div class="wifi ${wifiClass}" aria-label="wifi signal">
+              <span class="b1 ${bars >= 1 ? 'active' : ''}"></span>
+              <span class="b2 ${bars >= 2 ? 'active' : ''}"></span>
+              <span class="b3 ${bars >= 3 ? 'active' : ''}"></span>
+              <span class="b4 ${bars >= 4 ? 'active' : ''}"></span>
+            </div>
+            <div class="indicator ${state.nfcHealthy ? 'ok' : ''}"><span class="indicator-dot"></span><span>NFC</span></div>
+            <div class="indicator ${state.scaleHealthy ? 'ok' : ''}"><span class="indicator-dot"></span><span>Scale</span></div>
+          </div>
+          <div class="status-right">
+            <span class="brand-label">SpoolBuddy</span>
+            <span class="mini-weight">${esc(formatWeight(state.displayedWeight))} g</span>
+          </div>
+        </div>`;
+    }
+
+    function renderBoot() {
+      return `
+        <div class="content">
+          <div class="center-screen boot">
+            <div class="logo">SpoolBuddy</div>
+            <div class="version">v0.5.0</div>
+            <div class="muted">Initializing${'.'.repeat((state.tick % 3) + 1)}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderConnecting() {
+      const dots = '.'.repeat((state.tick % 3) + 1);
+      return `
+        <div class="content">
+          <div class="center-screen">
+            <div class="connect-title">Connecting to WiFi${dots}</div>
+            <div class="ssid">${esc(state.ssid)}</div>
+            <div class="lookup-spinner"></div>
+            <div class="muted">Waiting for network${state.backendConnected ? '' : ' and backend'}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderHome() {
+      const tileData = [
+        { id: 'SCALE', icon: '📊', label: 'Scale', subtext: `${formatWeight(state.displayedWeight)} g`, footer: state.scaleStable ? 'Stable' : 'Settling…' },
+        { id: 'SCAN', icon: '📱', label: 'Scan', subtext: 'Read NFC tag', footer: '' },
+        { id: 'ASSIGN', icon: '🔗', label: 'Assign', subtext: 'Link spool', footer: '' },
+        { id: 'TARE', icon: '⚖️', label: 'Tare', subtext: 'Zero scale', footer: '' },
+        { id: 'INFO', icon: 'ℹ️', label: 'Info', subtext: 'Device status', footer: '' },
+        { id: 'SETTINGS', icon: '⚙️', label: 'Settings', subtext: 'Network + display', footer: '' }
+      ];
+      return `
+        <div class="content">
+          <div class="home-grid">
+            ${tileData.map((tile) => `
+              <div class="tile ${state.pressedTarget === `tile:${tile.id}` ? 'pressed' : ''}">
+                <div class="tile-icon">${tile.id === 'SCALE' ? '📊' : tile.icon}</div>
+                <div class="tile-label">${tile.label}</div>
+                <div class="tile-subtext">${esc(tile.subtext)}</div>
+                ${tile.footer ? `<div class="tile-footer">${esc(tile.footer)}</div>` : ''}
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    function renderScale() {
+      const maxHistory = Math.max(1, ...state.weightHistory, state.displayedWeight);
+      return `
+        <div class="content">
+          <div class="scale-screen">
+            <div class="weight-big">${esc(formatWeight(state.displayedWeight))} g</div>
+            <div class="stability ${state.scaleStable ? 'stable' : 'unstable'}">${state.scaleStable ? '● Stable' : '○ Settling...'}</div>
+            <div class="history-card">
+              <div class="history-label">Recent weight history (last 20 readings)</div>
+              <div class="history-bars">
+                ${state.weightHistory.map((value) => {
+                  const height = Math.max(8, Math.round((value / maxHistory) * 110));
+                  return `<div class="history-bar ${state.scaleStable ? '' : 'unstable'}" style="height:${height}px"></div>`;
+                }).join('')}
+              </div>
+            </div>
+            <div class="hint">Tap anywhere to return</div>
+          </div>
+        </div>`;
+    }
+
+    function renderTagRead() {
+      const dots = '.'.repeat((state.tick % 3) + 1);
+      const title = state.waitingForTag ? 'Ready to scan' : `Looking up spool${dots}`;
+      const subtitle = state.waitingForTag ? 'Place a tag on the simulated reader' : state.activeTagUid;
+      return `
+        <div class="content">
+          <div class="center-screen">
+            <div class="lookup-title">${esc(title)}</div>
+            <div class="uid">${esc(subtitle || state.currentTagUid || 'Waiting for NFC tag')}</div>
+            <div class="lookup-spinner"></div>
+            <div class="muted">${esc(state.currentTagTypeLabel)}</div>
+            <div class="hint">${state.lookupPending ? 'Querying backend...' : 'Tap to return to Home'}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderTagMatched() {
+      const spool = state.currentSpool;
+      const pct = clamp(Math.round((spool.weightUsed / spool.labelWeight) * 100), 0, 100);
+      const scaleNet = Math.max(0, state.displayedWeight - spool.coreWeight);
+      return `
+        <div class="content">
+          <div class="matched-screen">
+            <div class="swatch-large" style="background:${esc(spool.colorHex)}"></div>
+            <div class="matched-line">${esc(`${spool.material} — ${spool.brand}`)}</div>
+            <div class="matched-color">${esc(spool.colorName)}</div>
+            <div class="matched-sub">UID: ${esc(spool.uid)}</div>
+            <div class="matched-sub">Scale: ${esc(Math.round(state.displayedWeight))}g (Net: ${esc(Math.round(scaleNet))}g)</div>
+            <div class="progress-wrap">
+              <div class="progress-label">Used: ${esc(Math.round(spool.weightUsed))}g / ${esc(Math.round(spool.labelWeight))}g</div>
+              <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+            </div>
+            <div class="matched-sub" style="grid-column:1 / -1; text-align:center; margin-top:4px;">Tap to return • auto-return in 15s</div>
+          </div>
+        </div>`;
+    }
+
+    function renderTagUnknown() {
+      return `
+        <div class="content">
+          <div class="tag-unknown">
+            <div class="warning-title">Unknown Tag</div>
+            <div class="uid">${esc(state.activeTagUid || state.currentTagUid)}</div>
+            <div class="muted">${esc(state.currentTagTech)}</div>
+            <div class="hint" style="bottom:72px;">Tap Register to launch the 5-step wizard</div>
+            <div class="tag-button ${state.pressedTarget === 'register' ? 'pressed' : ''}">Register</div>
+          </div>
+        </div>`;
+    }
+
+    function renderPicker(title, step, previous, current, next) {
+      return `
+        <div class="content">
+          <div class="wizard">
+            <div class="wizard-title">${esc(title)}</div>
+            <div class="wizard-step">Step ${step}/5</div>
+            <div class="picker-list">
+              <div class="picker-prev">${esc(previous)}</div>
+              <div class="picker-current">${esc(current)}</div>
+              <div class="picker-next">${esc(next)}</div>
+            </div>
+            <div class="picker-help">Swipe up/down to scroll • Tap to confirm</div>
+          </div>
+        </div>`;
+    }
+
+    function renderRegisterColor() {
+      return `
+        <div class="content">
+          <div class="wizard">
+            <div class="wizard-title">Select Color</div>
+            <div class="wizard-step">Step 3/5</div>
+            <div class="color-grid">
+              ${COLOR_CHOICES.map((color, index) => {
+                const isSelected = state.register.colorIndex === index;
+                const isPressed = state.pressedTarget === `color:${index}`;
+                const style = color.name === 'Transparent' ? `background:${color.hex};` : `background:${color.hex};`;
+                return `<div class="color-tile ${isSelected ? 'selected' : ''} ${isPressed ? 'pressed' : ''}" style="${style}"></div>`;
+              }).join('')}
+            </div>
+            <div class="color-name">${esc(COLOR_CHOICES[state.register.colorIndex].name)}</div>
+            <div class="picker-help">Tap a color tile to select and continue</div>
+          </div>
+        </div>`;
+    }
+
+    function renderRegisterConfirm() {
+      const color = currentRegisterColor();
+      const netFilament = Math.max(0, state.displayedWeight - CORE_WEIGHT);
+      const scaleClass = state.scaleStable ? 'success' : 'warning';
+      return `
+        <div class="content">
+          <div class="confirm-screen">
+            <div class="wizard-title">Confirm Registration</div>
+            <div class="wizard-step">Step 5/5</div>
+            <div class="confirm-table">
+              <div class="confirm-label">Material</div><div class="confirm-value">${esc(MATERIALS[state.register.materialIndex])}</div>
+              <div class="confirm-label">Brand</div><div class="confirm-value">${esc(BRANDS[state.register.brandIndex])}</div>
+              <div class="confirm-label">Color</div><div class="confirm-value"><span class="mini-swatch" style="background:${esc(color.name === 'Transparent' ? '#F0F0F0' : color.hex)}"></span>${esc(color.name)}</div>
+              <div class="confirm-label">Label Weight</div><div class="confirm-value">${esc(currentRegisterWeight())}g</div>
+              <div class="confirm-label">Core Weight</div><div class="confirm-value">250g (estimated)</div>
+              <div class="confirm-label">Scale</div><div class="confirm-value ${scaleClass}">${esc(Math.round(state.displayedWeight))}g${state.scaleStable ? '' : ' *'}</div>
+              <div class="confirm-label">Net Filament</div><div class="confirm-value success">${esc(Math.round(netFilament))}g</div>
+            </div>
+            <div class="confirm-note">* unstable reading may settle before registration</div>
+            <div class="confirm-actions">
+              <div class="confirm-button cancel ${state.pressedTarget === 'cancel' ? 'pressed' : ''}">✕ Cancel</div>
+              <div class="confirm-button register ${state.pressedTarget === 'registerConfirm' ? 'pressed' : ''}">✓ Register</div>
+            </div>
+            ${state.register.submitting ? `
+              <div class="register-overlay">
+                <div class="lookup-spinner"></div>
+                <div class="result-title">Registering...</div>
+                <div class="muted">Posting spool metadata to backend</div>
+              </div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    function renderRegisterResult() {
+      const success = state.register.result === 'success';
+      const color = currentRegisterColor();
+      return `
+        <div class="content">
+          <div class="result-screen">
+            <div class="result-icon ${success ? 'success' : 'error'}">${success ? '✓' : '✕'}</div>
+            <div class="result-title">${esc(success ? 'Spool Registered!' : 'Registration Failed')}</div>
+            <div class="result-summary">
+              ${success
+                ? `${esc(MATERIALS[state.register.materialIndex])} • ${esc(BRANDS[state.register.brandIndex])} • ${esc(color.name)} • ${esc(currentRegisterWeight())}g`
+                : esc(state.register.message)}
+            </div>
+            <div class="result-help">Auto-returning to Home in 3s</div>
+          </div>
+        </div>`;
+    }
+
+    function renderSettings() {
+      const items = [
+        { label: 'WiFi', value: `${state.ssid} • ${state.wifiConnected ? `${state.rssi} dBm` : 'offline'}` },
+        { label: 'Server', value: `${state.serverUrl}\n${state.backendConnected ? 'Connected' : 'Disconnected'}` },
+        { label: 'Device ID', value: state.deviceId },
+        { label: 'Firmware', value: 'v0.5.0' },
+        { label: 'NFC', value: state.nfcHealthy ? 'OK' : 'Error' },
+        { label: 'Scale', value: `${state.scaleHealthy ? 'OK' : 'Error'} • tare ${Math.round(state.tareOffset)}g` },
+        { label: 'Display', value: `Brightness ${state.brightness}%`, brightness: state.brightness },
+        { label: 'About', value: 'SpoolBuddy touchscreen simulator' }
+      ];
+      const visible = items.slice(state.settingsScroll, state.settingsScroll + 6);
+      return `
+        <div class="content">
+          <div class="settings-screen">
+            <div class="settings-header">
+              <h2>Settings</h2>
+              <div class="muted">Swipe up/down to scroll</div>
+            </div>
+            <div class="settings-list">
+              ${visible.map((item) => `
+                <div class="settings-item">
+                  <div class="settings-item-label">${esc(item.label)}</div>
+                  <div class="settings-item-value">
+                    ${esc(item.value).replaceAll('\n', '<br>')}
+                    ${typeof item.brightness === 'number' ? `<div class="brightness-bar"><div class="brightness-fill" style="width:${item.brightness}%"></div></div>` : ''}
+                  </div>
+                </div>`).join('')}
+            </div>
+            <div class="settings-help">Tap to return • Long press to open WiFi provisioning</div>
+          </div>
+        </div>`;
+    }
+
+    function renderInfo() {
+      const items = [
+        ['Firmware version', 'v0.5.0'],
+        ['Device ID', state.deviceId],
+        ['WiFi', `${state.ssid} • ${state.wifiConnected ? state.ip : 'offline'} • ${state.wifiConnected ? `${state.rssi} dBm` : 'disconnected'}`],
+        ['Server URL', state.serverUrl],
+        ['Uptime', formatDuration(Date.now() - state.startedAt)],
+        ['Free heap', `${freeHeapKb()} KB`],
+        ['NFC reader', state.nfcHealthy ? 'OK' : 'Error'],
+        ['Scale', state.scaleHealthy ? `OK • ${formatWeight(state.displayedWeight)}g` : 'Error']
+      ];
+      return `
+        <div class="content">
+          <div class="info-screen">
+            <div class="info-header">
+              <h2>Device Info</h2>
+              <div class="muted">Tap anywhere to return</div>
+            </div>
+            <div class="info-list">
+              ${items.map(([label, value]) => `
+                <div class="info-item">
+                  <div class="info-item-label">${esc(label)}</div>
+                  <div class="info-item-value">${esc(value)}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderAssign() {
+      return `
+        <div class="content">
+          <div class="assign-screen">
+            <div class="assign-icon">🔗</div>
+            <div class="assign-title">Assign Spool</div>
+            <div class="muted">Scan spool tag, then place on NFC reader</div>
+            <div class="hint">Tap anywhere to return</div>
+          </div>
+        </div>`;
+    }
+
+    function renderError() {
+      return `
+        <div class="content">
+          <div class="error-screen">
+            <div class="error-title">Error</div>
+            <div class="error-message">${esc(state.errorMessage)}</div>
+            <div class="muted">Tap to dismiss</div>
+          </div>
+        </div>`;
+    }
+
+    function renderOta() {
+      return `
+        <div class="content">
+          <div class="ota-screen">
+            <div class="ota-title">Updating firmware...</div>
+            <div class="ssid">Target ${esc(state.ota.targetVersion)}</div>
+            <div class="progress"><div class="progress-fill" style="width:${state.ota.progress}%"></div></div>
+            <div class="ota-percent">${state.ota.progress}%</div>
+            <div class="muted">Do not power off</div>
+          </div>
+        </div>`;
+    }
+
+    function renderProvisioning() {
+      return `
+        <div class="content">
+          <div class="provision-screen">
+            <div class="provision-title">WiFi Setup</div>
+            <div class="muted">Connect to:</div>
+            <div class="ssid">SpoolBuddy-${esc(state.deviceId.slice(-4))}</div>
+            <div class="ip-line">Then open http://192.168.4.1</div>
+            <div class="ap-indicator">AP Mode Active</div>
+            <div class="muted">Toggle WiFi on, then tap to continue</div>
+          </div>
+        </div>`;
+    }
+
+    function renderContent() {
+      switch (state.view) {
+        case View.BOOT: return renderBoot();
+        case View.CONNECTING: return renderConnecting();
+        case View.HOME: return renderHome();
+        case View.SCALE: return renderScale();
+        case View.INFO: return renderInfo();
+        case View.SETTINGS: return renderSettings();
+        case View.ASSIGN: return renderAssign();
+        case View.TAG_READ: return renderTagRead();
+        case View.TAG_MATCHED: return renderTagMatched();
+        case View.TAG_UNKNOWN: return renderTagUnknown();
+        case View.REGISTER_MATERIAL:
+          return renderPicker(
+            'Select Material',
+            1,
+            MATERIALS[wrapIndex(state.register.materialIndex - 1, MATERIALS.length)],
+            MATERIALS[state.register.materialIndex],
+            MATERIALS[wrapIndex(state.register.materialIndex + 1, MATERIALS.length)]
+          );
+        case View.REGISTER_BRAND:
+          return renderPicker(
+            'Select Brand',
+            2,
+            BRANDS[wrapIndex(state.register.brandIndex - 1, BRANDS.length)],
+            BRANDS[state.register.brandIndex],
+            BRANDS[wrapIndex(state.register.brandIndex + 1, BRANDS.length)]
+          );
+        case View.REGISTER_COLOR: return renderRegisterColor();
+        case View.REGISTER_WEIGHT:
+          return renderPicker(
+            'Label Weight',
+            4,
+            `${LABEL_WEIGHTS[wrapIndex(state.register.weightIndex - 1, LABEL_WEIGHTS.length)]}g`,
+            `${LABEL_WEIGHTS[state.register.weightIndex]}g`,
+            `${LABEL_WEIGHTS[wrapIndex(state.register.weightIndex + 1, LABEL_WEIGHTS.length)]}g`
+          );
+        case View.REGISTER_CONFIRM: return renderRegisterConfirm();
+        case View.REGISTER_RESULT: return renderRegisterResult();
+        case View.OTA: return renderOta();
+        case View.ERROR: return renderError();
+        case View.PROVISIONING: return renderProvisioning();
+        default: return renderHome();
+      }
+    }
+
+    function render() {
+      screenRoot.innerHTML = `${renderStatusBar()}${renderContent()}${renderTouchFeedback()}`;
+      displayEl.style.filter = `brightness(${state.brightness / 100})`;
+      scaleSliderLabel.textContent = `${formatWeight(state.rawWeight)}g raw`;
+      scaleReadoutEl.textContent = `Displayed: ${formatWeight(state.displayedWeight)} g`;
+      tareReadoutEl.textContent = `Tare offset: ${formatWeight(state.tareOffset)} g`;
+      tagUidEl.textContent = state.currentTagUid || '—';
+      tagTypeEl.textContent = state.currentTagTech;
+      brightnessLabel.textContent = `${state.brightness}%`;
+    }
+
+    function renderTouchFeedback() {
+      if (!state.touchFeedback || state.touchFeedback.until < Date.now()) {
+        return '';
+      }
+      return `<div class="touch-feedback" style="left:${state.touchFeedback.x}px; top:${state.touchFeedback.y}px;"></div>`;
+    }
+
+    scaleSlider.addEventListener('input', () => {
+      state.rawWeight = Number(scaleSlider.value);
+      render();
+    });
+
+    scaleSlider.addEventListener('change', () => {
+      logEvent(`Scale slider set to ${formatWeight(state.rawWeight)}g raw`, 'api');
+    });
+
+    scaleStableInput.addEventListener('change', () => {
+      state.scaleStable = scaleStableInput.checked;
+      logEvent(`Scale stability ${state.scaleStable ? 'enabled' : 'disabled'}`, state.scaleStable ? 'api' : 'warn');
+      render();
+    });
+
+    wifiToggle.addEventListener('change', () => {
+      state.wifiConnected = wifiToggle.checked;
+      logEvent(`WiFi ${state.wifiConnected ? 'connected' : 'disconnected'}`, state.wifiConnected ? 'api' : 'warn');
+      if (state.view === View.PROVISIONING && state.wifiConnected) {
+        schedule('provisionConnect', 300, () => startConnecting('Provisioned WiFi connected'));
+      }
+      render();
+    });
+
+    backendToggle.addEventListener('change', () => {
+      state.backendConnected = backendToggle.checked;
+      logEvent(`Backend ${state.backendConnected ? 'connected' : 'disconnected'}`, state.backendConnected ? 'api' : 'warn');
+      render();
+    });
+
+    serverUrlInput.addEventListener('change', () => {
+      state.serverUrl = serverUrlInput.value.trim() || 'http://bambuddy.local';
+      serverUrlInput.value = state.serverUrl;
+      logEvent(`Server URL updated to ${state.serverUrl}`, 'api');
+      render();
+    });
+
+    tagSelect.addEventListener('change', () => {
+      handleTagSelection(tagSelect.value, 'selector');
+    });
+
+    newTagBtn.addEventListener('click', () => {
+      if (state.nfcTagKind === 'NONE') {
+        logEvent('Select a tag type before generating a UID', 'warn');
+        return;
+      }
+      if (state.currentTagUid && !state.scanArmed) {
+        state.scanArmed = true;
+        logEvent(`Rescanning existing tag UID=${state.currentTagUid}`, 'api');
+        maybeAutoScan(true);
+        return;
+      }
+      handleTagSelection(state.nfcTagKind, 'rescan');
+    });
+
+    brightnessSlider.addEventListener('input', () => {
+      state.brightness = Number(brightnessSlider.value);
+      render();
+    });
+
+    brightnessSlider.addEventListener('change', () => {
+      logEvent(`Brightness set to ${state.brightness}%`, 'api');
+    });
+
+    rebootBtn.addEventListener('click', () => reboot('Reboot button'));
+    otaBtn.addEventListener('click', startOta);
+    provisionBtn.addEventListener('click', () => showProvisioning('Manual provisioning screen'));
+    errorBtn.addEventListener('click', () => showError('Backend unavailable', 'Manual error trigger'));
+
+    function tick() {
+      state.tick += 1;
+      state.displayedWeight = Number(formatWeight(currentWeight()));
+      state.weightHistory.push(state.displayedWeight);
+      while (state.weightHistory.length > 20) {
+        state.weightHistory.shift();
+      }
+      if (state.touchFeedback && state.touchFeedback.until < Date.now()) {
+        state.touchFeedback = null;
+      }
+      render();
+    }
+
+    logEvent('Simulator ready: SpoolBuddy touchscreen UI loaded', 'state');
+    reboot('Initial boot');
+    render();
+    window.setInterval(tick, 250);
+  </script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" font-family="Consolas, monospace" font-size="12">
+  <title>SpoolBuddy ESP32-S3 Wiring Diagram</title>
+
+  <!-- Background -->
+  <rect width="1100" height="700" fill="#1a1a2e" rx="8"/>
+
+  <!-- Title -->
+  <text x="480" y="35" text-anchor="middle" fill="#e0e0e0" font-size="18" font-weight="bold">SpoolBuddy ESP32-S3 — Wiring Diagram</text>
+  <text x="480" y="55" text-anchor="middle" fill="#888" font-size="11">ESP32-S3-DevKitC-1 + PN5180 + HX711 + Load Cell + SSD1306</text>
+
+  <!-- ═══════════════ ESP32-S3 (center) ═══════════════ -->
+  <rect x="365" y="80" width="230" height="480" fill="#2d2d44" stroke="#6c63ff" stroke-width="2" rx="6"/>
+  <text x="480" y="105" text-anchor="middle" fill="#6c63ff" font-size="14" font-weight="bold">ESP32-S3-DevKitC-1</text>
+
+  <!-- Left-side pins (facing PN5180) -->
+  <rect x="360" y="135" width="14" height="14" fill="#ff6b6b" rx="2"/>
+  <text x="380" y="146" fill="#ccc" font-size="10">3V3</text>
+
+  <rect x="360" y="175" width="14" height="14" fill="#222" stroke="#888" rx="2"/>
+  <text x="380" y="186" fill="#ccc" font-size="10">GND</text>
+
+  <rect x="360" y="235" width="14" height="14" fill="#a855f7" rx="2"/>
+  <text x="380" y="246" fill="#ccc" font-size="10">G8 (RST)</text>
+
+  <rect x="360" y="285" width="14" height="14" fill="#a855f7" rx="2"/>
+  <text x="380" y="296" fill="#ccc" font-size="10">G9 (BUSY)</text>
+
+  <rect x="360" y="335" width="14" height="14" fill="#a855f7" rx="2"/>
+  <text x="380" y="346" fill="#ccc" font-size="10">G10 (NSS)</text>
+
+  <rect x="360" y="385" width="14" height="14" fill="#a855f7" rx="2"/>
+  <text x="380" y="396" fill="#ccc" font-size="10">G11 (MOSI)</text>
+
+  <rect x="360" y="435" width="14" height="14" fill="#a855f7" rx="2"/>
+  <text x="380" y="446" fill="#ccc" font-size="10">G12 (SCK)</text>
+
+  <rect x="360" y="485" width="14" height="14" fill="#a855f7" rx="2"/>
+  <text x="380" y="496" fill="#ccc" font-size="10">G13 (MISO)</text>
+
+  <!-- Right-side pins (facing HX711/OLED) -->
+  <rect x="586" y="135" width="14" height="14" fill="#ff6b6b" rx="2"/>
+  <text x="582" y="146" fill="#ccc" font-size="10" text-anchor="end">5V</text>
+
+  <rect x="586" y="175" width="14" height="14" fill="#222" stroke="#888" rx="2"/>
+  <text x="582" y="186" fill="#ccc" font-size="10" text-anchor="end">GND</text>
+
+  <rect x="586" y="235" width="14" height="14" fill="#ffd93d" rx="2"/>
+  <text x="582" y="246" fill="#ccc" font-size="10" text-anchor="end">G1 (DOUT)</text>
+
+  <rect x="586" y="285" width="14" height="14" fill="#ffd93d" rx="2"/>
+  <text x="582" y="296" fill="#ccc" font-size="10" text-anchor="end">G2 (SCK)</text>
+
+  <rect x="586" y="365" width="14" height="14" fill="#6bcb77" rx="2"/>
+  <text x="582" y="376" fill="#ccc" font-size="10" text-anchor="end">G3 (SDA)</text>
+
+  <rect x="586" y="415" width="14" height="14" fill="#6bcb77" rx="2"/>
+  <text x="582" y="426" fill="#ccc" font-size="10" text-anchor="end">G4 (SCL)</text>
+
+  <rect x="586" y="485" width="14" height="14" fill="#4ecdc4" rx="2"/>
+  <text x="582" y="496" fill="#ccc" font-size="10" text-anchor="end">G48 (LED)</text>
+
+  <!-- ═══════════════ PN5180 NFC Reader (far left) ═══════════════ -->
+  <rect x="30" y="110" width="180" height="440" fill="#1e3a2b" stroke="#4ecdc4" stroke-width="2" rx="6"/>
+  <text x="120" y="138" text-anchor="middle" fill="#4ecdc4" font-size="13" font-weight="bold">PN5180 NFC</text>
+  <text x="120" y="155" text-anchor="middle" fill="#888" font-size="10">SPI @ 500 kHz</text>
+
+  <!-- PN5180 pins on RIGHT edge -->
+  <circle cx="214" cy="195" r="5" fill="#ff6b6b"/>
+  <text x="206" y="199" fill="#ccc" font-size="10" text-anchor="end">3V3</text>
+
+  <circle cx="214" cy="235" r="5" fill="#ff6b6b"/>
+  <text x="206" y="239" fill="#ccc" font-size="10" text-anchor="end">5V</text>
+
+  <circle cx="214" cy="275" r="5" fill="#444" stroke="#888"/>
+  <text x="206" y="279" fill="#ccc" font-size="10" text-anchor="end">GND</text>
+
+  <circle cx="214" cy="325" r="5" fill="#a855f7"/>
+  <text x="206" y="329" fill="#ccc" font-size="10" text-anchor="end">RST</text>
+
+  <circle cx="214" cy="375" r="5" fill="#a855f7"/>
+  <text x="206" y="379" fill="#ccc" font-size="10" text-anchor="end">BUSY</text>
+
+  <circle cx="214" cy="415" r="5" fill="#ff922b"/>
+  <text x="206" y="419" fill="#ccc" font-size="10" text-anchor="end">NSS</text>
+
+  <circle cx="214" cy="455" r="5" fill="#a855f7"/>
+  <text x="206" y="459" fill="#ccc" font-size="10" text-anchor="end">MOSI</text>
+
+  <circle cx="214" cy="490" r="5" fill="#a855f7"/>
+  <text x="206" y="494" fill="#ccc" font-size="10" text-anchor="end">SCK</text>
+
+  <circle cx="214" cy="525" r="5" fill="#a855f7"/>
+  <text x="206" y="529" fill="#ccc" font-size="10" text-anchor="end">MISO</text>
+
+  <!-- ═══════════════ HX711 (middle right) ═══════════════ -->
+  <rect x="700" y="110" width="160" height="230" fill="#2d1e3a" stroke="#f59e0b" stroke-width="2" rx="6"/>
+  <text x="780" y="135" text-anchor="middle" fill="#f59e0b" font-size="13" font-weight="bold">HX711</text>
+  <text x="780" y="152" text-anchor="middle" fill="#888" font-size="10">24-bit ADC</text>
+
+  <!-- HX711 LEFT edge pins (→ ESP32) -->
+  <circle cx="696" cy="195" r="5" fill="#ff6b6b"/>
+  <text x="706" y="199" fill="#ccc" font-size="10">VCC</text>
+
+  <circle cx="696" cy="230" r="5" fill="#444" stroke="#888"/>
+  <text x="706" y="234" fill="#ccc" font-size="10">GND</text>
+
+  <circle cx="696" cy="270" r="5" fill="#ffd93d"/>
+  <text x="706" y="274" fill="#ccc" font-size="10">SCK</text>
+
+  <circle cx="696" cy="305" r="5" fill="#e0e0e0"/>
+  <text x="706" y="309" fill="#ccc" font-size="10">DT</text>
+
+  <!-- HX711 RIGHT edge pins (→ Load Cell) -->
+  <circle cx="864" cy="195" r="5" fill="#ff4444"/>
+  <text x="856" y="199" fill="#ccc" font-size="10" text-anchor="end">E+</text>
+
+  <circle cx="864" cy="230" r="5" fill="#333" stroke="#ccc"/>
+  <text x="856" y="234" fill="#ccc" font-size="10" text-anchor="end">E−</text>
+
+  <circle cx="864" cy="270" r="5" fill="#eee"/>
+  <text x="856" y="274" fill="#ccc" font-size="10" text-anchor="end">A−</text>
+
+  <circle cx="864" cy="305" r="5" fill="#4ade80"/>
+  <text x="856" y="309" fill="#ccc" font-size="10" text-anchor="end">A+</text>
+
+  <!-- ═══════════════ Load Cell (far right) ═══════════════ -->
+  <rect x="940" y="130" width="130" height="190" fill="#2a2a1e" stroke="#fbbf24" stroke-width="2" rx="6"/>
+  <text x="1005" y="158" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="bold">Load Cell</text>
+  <text x="1005" y="173" text-anchor="middle" fill="#888" font-size="9">Strain gauge</text>
+
+  <!-- Load cell illustration -->
+  <rect x="968" y="195" width="74" height="14" fill="#888" stroke="#aaa" rx="2"/>
+  <circle cx="985" cy="202" r="4" fill="#555"/>
+  <circle cx="1025" cy="202" r="4" fill="#555"/>
+  <text x="1005" y="230" text-anchor="middle" fill="#666" font-size="8">↓ Force direction</text>
+
+  <!-- Load Cell wire stubs on LEFT edge -->
+  <circle cx="936" cy="248" r="4" fill="#ff4444"/>
+  <text x="960" y="252" fill="#ccc" font-size="9">Red (E+)</text>
+
+  <circle cx="936" cy="270" r="4" fill="#333" stroke="#ccc"/>
+  <text x="960" y="274" fill="#ccc" font-size="9">Black (E−)</text>
+
+  <circle cx="936" cy="292" r="4" fill="#eee"/>
+  <text x="960" y="296" fill="#ccc" font-size="9">White (A−)</text>
+
+  <circle cx="936" cy="314" r="4" fill="#4ade80"/>
+  <text x="960" y="318" fill="#ccc" font-size="9">Green (A+)</text>
+
+  <!-- ═══════════════ SSD1306 OLED (bottom right) ═══════════════ -->
+  <rect x="700" y="395" width="160" height="165" fill="#1e2d3a" stroke="#38bdf8" stroke-width="2" rx="6"/>
+  <text x="780" y="420" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="bold">SSD1306 OLED</text>
+  <text x="780" y="437" text-anchor="middle" fill="#888" font-size="10">128×64 I2C @ 0x3C</text>
+  <text x="780" y="452" text-anchor="middle" fill="#666" font-size="9">(optional)</text>
+
+  <!-- OLED pins on LEFT edge -->
+  <circle cx="696" cy="475" r="5" fill="#ff6b6b"/>
+  <text x="706" y="479" fill="#ccc" font-size="10">VCC</text>
+
+  <circle cx="696" cy="505" r="5" fill="#444" stroke="#888"/>
+  <text x="706" y="509" fill="#ccc" font-size="10">GND</text>
+
+  <circle cx="696" cy="530" r="5" fill="#6bcb77"/>
+  <text x="706" y="534" fill="#ccc" font-size="10">SDA</text>
+
+  <circle cx="696" cy="550" r="5" fill="#38bdf8"/>
+  <text x="706" y="554" fill="#ccc" font-size="10">SCL</text>
+
+  <!-- ═══════════════ WIRES: PN5180 → ESP32 (left gap, x: 219–360) ═══════════════ -->
+
+  <!-- 3V3 -->
+  <path d="M219,195 L250,195 L250,142 L360,142" stroke="#ff6b6b" stroke-width="2" fill="none"/>
+
+  <!-- 5V: route up above all boards → across top → down to ESP32 right 5V -->
+  <path d="M219,235 L235,235 L235,72 L620,72 L620,142 L600,142" stroke="#ff6b6b" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+
+  <!-- GND -->
+  <path d="M219,275 L260,275 L260,182 L360,182" stroke="#666" stroke-width="2" fill="none"/>
+
+  <!-- RST → GPIO 8 -->
+  <path d="M219,325 L280,325 L280,242 L360,242" stroke="#a855f7" stroke-width="1.5" fill="none"/>
+
+  <!-- BUSY → GPIO 9 -->
+  <path d="M219,375 L290,375 L290,292 L360,292" stroke="#e0e0e0" stroke-width="1.5" fill="none"/>
+
+  <!-- NSS → GPIO 10 -->
+  <path d="M219,415 L300,415 L300,342 L360,342" stroke="#ff922b" stroke-width="1.5" fill="none"/>
+
+  <!-- MOSI → GPIO 11 -->
+  <path d="M219,455 L310,455 L310,392 L360,392" stroke="#6bcb77" stroke-width="1.5" fill="none"/>
+
+  <!-- SCK → GPIO 12 -->
+  <path d="M219,490 L320,490 L320,442 L360,442" stroke="#ffd93d" stroke-width="1.5" fill="none"/>
+
+  <!-- MISO → GPIO 13 -->
+  <path d="M219,525 L330,525 L330,492 L360,492" stroke="#4ecdc4" stroke-width="1.5" fill="none"/>
+
+  <!-- ═══════════════ WIRES: HX711 → ESP32 (right gap, x: 600–691) ═══════════════ -->
+
+  <!-- VCC (3V3) -->
+  <path d="M691,195 L660,195 L660,142 L600,142" stroke="#ff6b6b" stroke-width="1.5" fill="none" stroke-dasharray="5,3"/>
+
+  <!-- GND -->
+  <path d="M691,230 L670,230 L670,182 L600,182" stroke="#666" stroke-width="1.5" fill="none" stroke-dasharray="3,2"/>
+
+  <!-- SCK → GPIO 2 -->
+  <path d="M691,270 L645,270 L645,292 L600,292" stroke="#ffd93d" stroke-width="1.5" fill="none"/>
+
+  <!-- DT (DOUT) → GPIO 1 -->
+  <path d="M691,305 L635,305 L635,242 L600,242" stroke="#e0e0e0" stroke-width="1.5" fill="none"/>
+
+  <!-- ═══════════════ WIRES: Load Cell → HX711 (gap x: 869–932) ═══════════════ -->
+
+  <!-- Red (E+) -->
+  <path d="M932,248 L900,248 L900,195 L869,195" stroke="#ff4444" stroke-width="1.5" fill="none"/>
+
+  <!-- Black (E−) -->
+  <path d="M932,270 L910,270 L910,230 L869,230" stroke="#555" stroke-width="1.5" fill="none"/>
+
+  <!-- White (A−) -->
+  <path d="M932,292 L920,292 L920,270 L869,270" stroke="#ccc" stroke-width="1.5" fill="none"/>
+
+  <!-- Green (A+) -->
+  <path d="M932,314 L920,314 L920,305 L869,305" stroke="#4ade80" stroke-width="1.5" fill="none"/>
+
+  <!-- ═══════════════ WIRES: OLED → ESP32 (right gap, x: 600–691) ═══════════════ -->
+
+  <!-- VCC → 3V3 shared rail -->
+  <path d="M691,475 L625,475 L625,142 L600,142" stroke="#ff6b6b" stroke-width="1" fill="none" stroke-dasharray="5,3"/>
+
+  <!-- GND -->
+  <path d="M691,505 L615,505 L615,182 L600,182" stroke="#666" stroke-width="1" fill="none" stroke-dasharray="3,2"/>
+
+  <!-- SDA → GPIO 3 -->
+  <path d="M691,530 L645,530 L645,372 L600,372" stroke="#6bcb77" stroke-width="1.5" fill="none"/>
+
+  <!-- SCL → GPIO 4 -->
+  <path d="M691,550 L635,550 L635,422 L600,422" stroke="#38bdf8" stroke-width="1.5" fill="none"/>
+
+  <!-- ═══════════════ Legend ═══════════════ -->
+  <rect x="30" y="620" width="1040" height="65" fill="#222240" stroke="#444" rx="4"/>
+
+  <text x="55" y="647" fill="#aaa" font-size="11" font-weight="bold">LEGEND:</text>
+
+  <rect x="130" y="637" width="14" height="14" fill="#ff6b6b" rx="2"/>
+  <text x="150" y="648" fill="#ccc" font-size="10">Power (3V3/5V)</text>
+
+  <rect x="260" y="637" width="14" height="14" fill="#333" stroke="#888" rx="2"/>
+  <text x="280" y="648" fill="#ccc" font-size="10">Ground</text>
+
+  <rect x="345" y="637" width="14" height="14" fill="#a855f7" rx="2"/>
+  <text x="365" y="648" fill="#ccc" font-size="10">SPI (NFC)</text>
+
+  <rect x="445" y="637" width="14" height="14" fill="#ffd93d" rx="2"/>
+  <text x="465" y="648" fill="#ccc" font-size="10">HX711 digital</text>
+
+  <rect x="565" y="637" width="14" height="14" fill="#6bcb77" rx="2"/>
+  <text x="585" y="648" fill="#ccc" font-size="10">I2C (OLED)</text>
+
+  <line x1="680" y1="644" x2="720" y2="644" stroke="#ff6b6b" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="728" y="648" fill="#ccc" font-size="10">Shared power rail</text>
+
+  <text x="55" y="670" fill="#aaa" font-size="11" font-weight="bold">LOAD CELL:</text>
+  <circle cx="148" cy="666" r="5" fill="#ff4444"/>
+  <text x="158" y="670" fill="#ccc" font-size="10">Red (E+)</text>
+  <circle cx="248" cy="666" r="5" fill="#333" stroke="#ccc"/>
+  <text x="258" y="670" fill="#ccc" font-size="10">Black (E−)</text>
+  <circle cx="368" cy="666" r="5" fill="#eee"/>
+  <text x="378" y="670" fill="#ccc" font-size="10">White (A−)</text>
+  <circle cx="478" cy="666" r="5" fill="#4ade80"/>
+  <text x="488" y="670" fill="#ccc" font-size="10">Green (A+)</text>
+
+  <!-- ═══════════════ Notes ═══════════════ -->
+  <text x="35" y="590" fill="#666" font-size="9">⚠ PN5180 needs BOTH 3V3 (IC) and 5V (antenna booster). Do NOT connect 5V to the 3V3 pin. Solder all SPI connections.</text>
+  <text x="35" y="605" fill="#666" font-size="9">⚠ Load cell: Mount with fixing screw on one end, force applied to the other. Do not press the white glued strain gauge directly.</text>
+</svg>
