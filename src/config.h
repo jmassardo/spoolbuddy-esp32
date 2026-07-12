@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-inline constexpr char APP_VERSION[] = "0.7.5";
+inline constexpr char APP_VERSION[] = "0.8.0";
 inline constexpr char DEFAULT_SERVER_URL[] = "http://bambuddy.local";
 
 inline constexpr char WIFI_NVS_NAMESPACE[] = "sbwifi";
