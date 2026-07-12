@@ -37,6 +37,7 @@ enum class Screen {
     CONFIRM_DELETE,
     PRINTER_LIST,
     SLOT_LIST,
+    CLEAR_PLATE_LIST,
     TAG_UNKNOWN,
     TAG_WRITING,
     TAG_WRITE_OK,
@@ -73,7 +74,7 @@ enum class HomeTile {
     SCAN_SPOOL,
     ASSIGN,
     TARE,
-    INFO,
+    CLEAR_PLATE,
     SETTINGS,
 };
 
@@ -83,6 +84,7 @@ enum class SettingsTile {
     CHECK_UPDATE,
     WIFI,
     REBOOT,
+    INFO,
 };
 
 struct TouchPoint {
@@ -123,6 +125,7 @@ public:
     void showConfirmPrompt(const char* prompt);
     void showPrinterList(const char** names, int count);
     void showSlotList(const char* printerName, const char** labels, int count);
+    void showClearPlateList(const char** names, int count);
     void showTagUnknown(const char* uid);
     void showTagWriting(int spoolId);
     void showTagWriteResult(bool success, const char* msg);
@@ -173,6 +176,7 @@ public:
     int hitTestTagMatchedAction(int16_t x, int16_t y) const;
     int hitTestPrinterList(int16_t x, int16_t y) const;
     int hitTestSlotList(int16_t x, int16_t y) const;
+    int hitTestClearPlateList(int16_t x, int16_t y) const;
     int hitTestRegMaterial(int16_t x, int16_t y) const;  // 0-11 or -1
     int hitTestRegBrand(int16_t x, int16_t y) const;     // 0-8 or -1
     int hitTestRegColorTile(int16_t x, int16_t y) const;
@@ -235,6 +239,8 @@ private:
     int _slotListCount = 0;
     char _slotLabels[16][12] = {};
     char _slotPrinterName[32] = {};
+    int _clearPlateListCount = 0;
+    char _clearPlateNames[9][32] = {};
     char _numpadBuf[8] = {};
     int _numpadLen = 0;
     char _numpadTitle[32] = {};
@@ -257,6 +263,7 @@ private:
     void _drawConfirmDelete();
     void _drawPrinterList();
     void _drawSlotList();
+    void _drawClearPlateList();
     void _drawTagUnknown();
     void _drawTagWriting();
     void _drawTagWriteResult();

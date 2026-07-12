@@ -28,6 +28,7 @@ enum class AppState {
     ConfirmWifiReset,
     PrinterList,
     SlotList,
+    ClearPlateList,
     TagUnknown,
     Register,
     Calibrate,
@@ -74,6 +75,8 @@ int availablePrinterCount = 0;
 SlotInfo availableSlots[16];
 int availableSlotCount = 0;
 int selectedPrinterIndex = -1;
+PrinterInfo clearPlatePrinters[9];
+int clearPlatePrinterCount = 0;
 int lastPendingWriteSpoolIdSeen = 0;
 bool backendConnected = false;
 bool deviceRegistered = false;
@@ -787,9 +790,25 @@ void handleHomeTileTap(HomeTile tile) {
             appState = AppState::Info;
             stateExpiresAt = millis() + 2000;
             break;
-        case HomeTile::INFO:
-            showInfoScreen();
+        case HomeTile::CLEAR_PLATE: {
+            display.showStatus("Clear Plate", "Checking printers...", "", "");
+            display.loop();
+            clearPlatePrinterCount = apiClient.getPrintersNeedingClear(clearPlatePrinters, 9);
+            if (clearPlatePrinterCount <= 0) {
+                display.showStatus("Clear Plate", "All plates clear!", "", "");
+                appState = AppState::Info;
+                stateExpiresAt = millis() + 2000;
+            } else {
+                const char* names[9] = {};
+                for (int i = 0; i < clearPlatePrinterCount; ++i) {
+                    names[i] = clearPlatePrinters[i].name.c_str();
+                }
+                display.showClearPlateList(names, clearPlatePrinterCount);
+                appState = AppState::ClearPlateList;
+                stateExpiresAt = 0;
+            }
             break;
+        }
         case HomeTile::SETTINGS:
             showSettingsScreen();
             break;
@@ -843,6 +862,7 @@ void handleUiAction(bool longPress) {
         case AppState::Info:
         case AppState::TagMatched:
         case AppState::TagUnknown:
+        case AppState::ClearPlateList:
         case AppState::Error:
             showHomeScreen();
             break;
@@ -1130,6 +1150,9 @@ void loop() {
                     display.loop();
                     delay(500);
                     ESP.restart();
+                } else if (stile == SettingsTile::INFO) {
+                    showInfoScreen();
+                    chirp(880, 30);
                 }
             }
         } else if (appState == AppState::TagMatched) {
@@ -1244,6 +1267,20 @@ void loop() {
                         availableSlots[index].label);
                 } else {
                     snprintf(msg, sizeof(msg), "Assignment failed");
+                }
+                showActionResultThenHome(ok, msg);
+            }
+        } else if (appState == AppState::ClearPlateList) {
+            TouchPoint tp = display.lastTouchPoint();
+            int index = display.hitTestClearPlateList(tp.x, tp.y);
+            if (index >= 0 && index < clearPlatePrinterCount) {
+                bool ok = apiClient.clearPlate(clearPlatePrinters[index].id);
+                backendConnected = ok;
+                char msg[64];
+                if (ok) {
+                    snprintf(msg, sizeof(msg), "%.24s cleared", clearPlatePrinters[index].name.c_str());
+                } else {
+                    snprintf(msg, sizeof(msg), "Clear failed");
                 }
                 showActionResultThenHome(ok, msg);
             }

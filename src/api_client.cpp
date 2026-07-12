@@ -293,6 +293,59 @@ int ApiClient::getPrinters(PrinterInfo* printers, int maxCount) {
     return count;
 }
 
+int ApiClient::getPrintersNeedingClear(PrinterInfo* printers, int maxCount) {
+    if (_serverUrl.isEmpty() || printers == nullptr || maxCount <= 0) {
+        return 0;
+    }
+
+    // First get all printers
+    PrinterInfo allPrinters[16];
+    int totalPrinters = getPrinters(allPrinters, 16);
+    if (totalPrinters <= 0) {
+        return 0;
+    }
+
+    int count = 0;
+    for (int i = 0; i < totalPrinters && count < maxCount; ++i) {
+        String responseBody;
+        int statusCode = 0;
+        if (!_httpGet(_buildUrl(String("/api/v1/printers/") + allPrinters[i].id + "/status"),
+                      responseBody, statusCode)) {
+            continue;
+        }
+        if (statusCode < 200 || statusCode >= 300) {
+            continue;
+        }
+
+        JsonDocument doc;
+        if (deserializeJson(doc, responseBody) != DeserializationError::Ok) {
+            continue;
+        }
+
+        const char* state = doc["state"] | "";
+        if (strcmp(state, "FINISH") == 0 || strcmp(state, "FAILED") == 0) {
+            printers[count] = allPrinters[i];
+            ++count;
+        }
+    }
+
+    return count;
+}
+
+bool ApiClient::clearPlate(int printerId) {
+    if (_serverUrl.isEmpty() || printerId <= 0) {
+        return false;
+    }
+
+    String responseBody;
+    int statusCode = 0;
+    if (!_httpPost(_buildUrl(String("/api/v1/printers/") + printerId + "/clear-plate"),
+                   "{}", responseBody, statusCode)) {
+        return false;
+    }
+    return statusCode >= 200 && statusCode < 300;
+}
+
 int ApiClient::getSlots(int printerId, SlotInfo* slots, int maxCount) {
     if (_serverUrl.isEmpty() || slots == nullptr || maxCount <= 0 || printerId <= 0) {
         return 0;

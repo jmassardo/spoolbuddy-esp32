@@ -116,6 +116,14 @@ constexpr int PRINTER_GRID_GAP = 8;
 constexpr int PRINTER_GRID_X0 = (TFT_WIDTH - PRINTER_GRID_COLS * PRINTER_BTN_W - (PRINTER_GRID_COLS - 1) * PRINTER_GRID_GAP) / 2;
 constexpr int PRINTER_GRID_Y0 = STATUS_BAR_H + 40;
 
+constexpr int CLEAR_GRID_COLS = 3;
+constexpr int CLEAR_GRID_ROWS = 3;
+constexpr int CLEAR_BTN_W = 140;
+constexpr int CLEAR_BTN_H = 55;
+constexpr int CLEAR_GRID_GAP = 10;
+constexpr int CLEAR_GRID_X0 = (TFT_WIDTH - CLEAR_GRID_COLS * CLEAR_BTN_W - (CLEAR_GRID_COLS - 1) * CLEAR_GRID_GAP) / 2;
+constexpr int CLEAR_GRID_Y0 = STATUS_BAR_H + 40;
+
 int wrapIndex(int index, int count) {
     if (count <= 0) {
         return 0;
@@ -450,6 +458,20 @@ void TouchDisplay::showSlotList(const char* printerName, const char** labels, in
     _needsRedraw = true;
 }
 
+void TouchDisplay::showClearPlateList(const char** names, int count) {
+    _clearPlateListCount = constrain(count, 0, static_cast<int>(sizeof(_clearPlateNames) / sizeof(_clearPlateNames[0])));
+    for (int i = 0; i < _clearPlateListCount; ++i) {
+        strncpy(_clearPlateNames[i], (names != nullptr && names[i] != nullptr) ? names[i] : "", sizeof(_clearPlateNames[i]) - 1);
+        _clearPlateNames[i][sizeof(_clearPlateNames[i]) - 1] = '\0';
+    }
+    for (int i = _clearPlateListCount; i < static_cast<int>(sizeof(_clearPlateNames) / sizeof(_clearPlateNames[0])); ++i) {
+        _clearPlateNames[i][0] = '\0';
+    }
+    _screen = Screen::CLEAR_PLATE_LIST;
+    _msgExpiry = 0;
+    _needsRedraw = true;
+}
+
 void TouchDisplay::showTagUnknown(const char* uid) {
     strncpy(_uidBuf, uid, sizeof(_uidBuf) - 1);
     _uidBuf[sizeof(_uidBuf) - 1] = '\0';
@@ -656,6 +678,7 @@ void TouchDisplay::_render() {
         case Screen::CONFIRM_DELETE: _drawConfirmDelete(); break;
         case Screen::PRINTER_LIST: _drawPrinterList(); break;
         case Screen::SLOT_LIST: _drawSlotList(); break;
+        case Screen::CLEAR_PLATE_LIST: _drawClearPlateList(); break;
         case Screen::TAG_UNKNOWN: _drawTagUnknown(); break;
         case Screen::TAG_WRITING: _drawTagWriting(); break;
         case Screen::TAG_WRITE_OK:
@@ -762,7 +785,7 @@ static const TileInfo TILES[6] = {
     { "NFC",   "Scan",     0x07E0 },  // C_SUCCESS
     { "TAG",   "Assign",   0xFD20 },  // C_WARNING
     { "0g",    "Tare",     0x34DF },  // C_ACCENT
-    { "(i)",   "Info",     0x8410 },  // C_TEXT_DIM
+    { "CLR",   "Clear",    0x07E0 },  // C_SUCCESS — clear plate
     { "*",     "Settings", 0x8410 },  // C_TEXT_DIM
 };
 
@@ -848,18 +871,19 @@ HomeTile TouchDisplay::hitTestHomeTile(int16_t x, int16_t y) const {
 
 // --- Settings Grid ---
 
-static constexpr int SETTINGS_TILE_COUNT = 4;
+static constexpr int SETTINGS_TILE_COUNT = 5;
 
 static const TileInfo SETTINGS_TILES[SETTINGS_TILE_COUNT] = {
     { "CAL",  "Calibrate", 0x34DF },  // C_ACCENT
     { "OTA",  "Update",    0x07E0 },  // C_SUCCESS
     { "WiFi", "WiFi",      0xFD20 },  // C_WARNING
     { "RST",  "Reboot",    0xF800 },  // C_ERROR / red
+    { "(i)",  "Info",      0x8410 },  // C_TEXT_DIM
 };
 
 static void getSettingsTileRect(int index, int& x, int& y, int& w, int& h) {
-    // 2x2 grid
-    static constexpr int S_COLS = 2;
+    // 3x2 grid
+    static constexpr int S_COLS = 3;
     static constexpr int S_ROWS = 2;
     static constexpr int S_PAD = 12;
     static constexpr int S_TOP = STATUS_BAR_H + 30;  // room for title
@@ -1308,6 +1332,19 @@ int TouchDisplay::hitTestSlotList(int16_t x, int16_t y) const {
         _slotListCount);
 }
 
+int TouchDisplay::hitTestClearPlateList(int16_t x, int16_t y) const {
+    if (_screen != Screen::CLEAR_PLATE_LIST) {
+        return -1;
+    }
+
+    return hitTestGrid(
+        x, y,
+        CLEAR_GRID_X0, CLEAR_GRID_Y0,
+        CLEAR_GRID_COLS, CLEAR_GRID_ROWS,
+        CLEAR_BTN_W, CLEAR_BTN_H, CLEAR_GRID_GAP,
+        _clearPlateListCount);
+}
+
 int TouchDisplay::hitTestRegMaterial(int16_t x, int16_t y) const {
     if (_screen != Screen::REG_MATERIAL) {
         return -1;
@@ -1497,6 +1534,29 @@ void TouchDisplay::_drawSlotList() {
         int by = PRINTER_GRID_Y0 + row * (PRINTER_BTN_H + PRINTER_GRID_GAP);
 
         drawGridButton(_canvas, bx, by, PRINTER_BTN_W, PRINTER_BTN_H, _slotLabels[index], C_ACCENT, 1);
+    }
+    _canvas.setTextDatum(lgfx::top_left);
+}
+
+void TouchDisplay::_drawClearPlateList() {
+    _canvas.fillRect(0, STATUS_BAR_H, TFT_WIDTH, CONTENT_H, C_BG);
+    _canvas.setTextDatum(lgfx::middle_center);
+    _canvas.setTextColor(C_ACCENT);
+    _canvas.setTextSize(2);
+
+    if (_clearPlateListCount == 0) {
+        _canvas.drawString("No plates to clear", TFT_WIDTH / 2, TFT_HEIGHT / 2);
+    } else {
+        _canvas.drawString("Clear Plate", TFT_WIDTH / 2, CONTENT_Y + 18);
+
+        for (int index = 0; index < _clearPlateListCount; ++index) {
+            int col = index % CLEAR_GRID_COLS;
+            int row = index / CLEAR_GRID_COLS;
+            int bx = CLEAR_GRID_X0 + col * (CLEAR_BTN_W + CLEAR_GRID_GAP);
+            int by = CLEAR_GRID_Y0 + row * (CLEAR_BTN_H + CLEAR_GRID_GAP);
+
+            drawGridButton(_canvas, bx, by, CLEAR_BTN_W, CLEAR_BTN_H, _clearPlateNames[index], C_SUCCESS, 1);
+        }
     }
     _canvas.setTextDatum(lgfx::top_left);
 }

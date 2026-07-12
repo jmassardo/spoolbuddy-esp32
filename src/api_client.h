@@ -106,6 +106,8 @@ public:
     bool getSpoolById(int spoolId, SpoolRecord& record);
     bool deleteSpool(int spoolId);
     int getPrinters(PrinterInfo* printers, int maxCount);
+    int getPrintersNeedingClear(PrinterInfo* printers, int maxCount);
+    bool clearPlate(int printerId);
     int getSlots(int printerId, SlotInfo* slots, int maxCount);
     bool assignSpool(int spoolId, int printerId, int amsId, int trayId);
     bool unassignSpool(int printerId, int amsId, int trayId);
