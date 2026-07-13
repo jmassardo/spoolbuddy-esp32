@@ -2,10 +2,7 @@
 
 Firmware for the SpoolBuddy — an NFC-based filament spool tracking station for 3D printers. Place a spool on the scale, scan its NFC tag, and SpoolBuddy identifies the filament, shows remaining weight, and lets you assign it to a printer slot. Integrates with a [Bambuddy](https://github.com/maziggy/bambuddy) backend for inventory management.
 
-<p align="center">
-  <img src="docs/screens/03_idle_weight.png" width="240" alt="Weight reading"/>
-  <img src="docs/screens/06_tag_matched.png" width="240" alt="Tag matched"/>
-</p>
+<!-- Screenshots coming soon — see docs/ui-simulator.html for a live preview -->
 
 ## Features
 
