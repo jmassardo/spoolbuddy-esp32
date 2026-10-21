@@ -175,6 +175,7 @@ public:
     bool hitTestConfirmNo(int16_t x, int16_t y) const;
     int hitTestTagMatchedAction(int16_t x, int16_t y) const;
     int hitTestPrinterList(int16_t x, int16_t y) const;
+    bool handlePrinterListNavigationTouch(int16_t x, int16_t y);
     int hitTestSlotList(int16_t x, int16_t y) const;
     int hitTestClearPlateList(int16_t x, int16_t y) const;
     int hitTestRegMaterial(int16_t x, int16_t y) const;  // 0-11 or -1
@@ -183,7 +184,7 @@ public:
     bool hitTestRegConfirmRegister(int16_t x, int16_t y) const;
     bool hitTestRegConfirmCancel(int16_t x, int16_t y) const;
     int hitTestRegWeight(int16_t x, int16_t y) const;  // 0=250, 1=500, 2=1000, 3=custom, -1=none
-    int hitTestRegCoreWeight(int16_t x, int16_t y) const; // 0=low temp 250g, 1=high temp 216g, 2=custom, -1=none
+    int hitTestRegCoreWeight(int16_t x, int16_t y) const; // 0=250g, 1=216g, 2=Sunlu 185g, 3=custom, -1=none
     int hitTestRegCoreCustom(int16_t x, int16_t y) const; // 0=weigh, 1=type, -1=none
     void showDebugCoords(const char* text);
 
@@ -235,6 +236,7 @@ private:
     int _regColorIdx = 0;
     int _regWeightIdx = 3;
     int _printerListCount = 0;
+    int _printerListPage = 0;
     char _printerNames[16][32] = {};
     int _slotListCount = 0;
     char _slotLabels[16][12] = {};

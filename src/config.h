@@ -15,6 +15,7 @@ inline constexpr char PREF_API_KEY[] = "apikey";
 inline constexpr char PREF_DEVICE_ID[] = "devid";
 inline constexpr char PREF_SCALE_CALIBRATION[] = "scale_cal";
 inline constexpr char PREF_SCALE_TARE_OFFSET[] = "scale_tare";
+inline constexpr char PREF_TARE_SYNC_PENDING[] = "tare_pending";
 
 inline constexpr char DEVICE_ID_PREFIX[] = "spoolbuddy-";
 inline constexpr char PROVISION_AP_PREFIX[] = "SpoolBuddy-";
@@ -35,6 +36,7 @@ inline constexpr uint32_t ERROR_DISPLAY_MS = 4000;
 inline constexpr uint32_t TOUCH_FALLBACK_LONG_PRESS_MS = 1500;
 inline constexpr uint32_t SCALE_SAMPLE_INTERVAL_MS = 150;
 inline constexpr uint8_t SCALE_READ_AVERAGE_SAMPLES = 3;
+inline constexpr float SCALE_ZERO_DEADBAND_G = 10.0f;
 inline constexpr float SCALE_STABILITY_TOLERANCE_G = 0.5f;
 inline constexpr uint8_t SCALE_STABILITY_SAMPLES = 3;
 inline constexpr float DEFAULT_SCALE_CALIBRATION = 2280.0f;

@@ -9,7 +9,7 @@ Firmware for the SpoolBuddy — an NFC-based filament spool tracking station for
 - **NFC spool scanning** — Reads Bambu Lab RFID tags (ISO14443A) and generic ISO15693 NFC tags via a PN5180 reader
 - **Spool identification** — Looks up scanned tags against the Bambuddy inventory; displays material, brand, color, and remaining filament percentage
 - **Spool registration** — Step-by-step wizard to register unknown tags: pick material → brand → color → label weight → core weight
-- **Weight tracking** — HX711 load cell provides live weight with stability detection; automatically pushes weight updates to the backend
+- **Weight tracking** — HX711 load cell provides live weight with stability detection and a ±10 g zero deadband; automatically pushes weight updates to the backend
 - **Printer assignment** — Assign spools to specific printer AMS slots (A1–A4, B1–B4, etc.) or the external spool holder
 - **Clear plate** — One-tap plate clearing for printers in FINISH/FAILED state, enabling the print queue to continue
 - **Scale calibration** — Built-in calibration flow with known-weight reference and tare
@@ -67,6 +67,18 @@ pio run -e esp32s3
 
 The firmware binary is output to `.pio/build/esp32s3/firmware.bin`.
 
+### Host regression checks
+
+```bash
+python3 tests/host/run.py
+```
+
+Requires a C++17 compiler (`c++`, or set `CXX`). These checks run the real app,
+scale, and touchscreen logic with fake hardware and backend responses, covering
+assignment, zero-deadband boundaries, non-blocking sampling, tare sync retries,
+and registration choices. Physical NFC, touch, and backend connectivity still
+require a device smoke test.
+
 ### Flash via USB
 
 Put the ESP32-S3 into boot mode (hold BOOT, press RST, release BOOT), then:
@@ -108,7 +120,7 @@ The touchscreen shows a **6-tile home screen**:
 | **Scale** | Live weight display with stability indicator |
 | **Scan** | Activate NFC reader to scan a spool tag |
 | **Assign** | Scan a spool then assign it to a printer/slot |
-| **Tare** | Zero the scale (saves to NVS) |
+| **Tare** | Zero the scale (saves to NVS and syncs to Bambuddy) |
 | **Clear** | Clear build plate on printers that finished printing |
 | **Settings** | Calibration, OTA check, WiFi reset, reboot, device info |
 
@@ -120,6 +132,10 @@ The touchscreen shows a **6-tile home screen**:
 4. Tap **Assign** to assign the spool to a printer's AMS slot
 5. Weight is automatically pushed to the backend
 
+The printer picker uses a 3×3 grid with larger, two-line names. If there are more
+than nine printers, use **Next** / **Prev** to change pages. AMS slot selection
+retains its 4×4 layout.
+
 ### Spool Registration
 
 When an unrecognized tag is scanned, tap **Register** to walk through:
@@ -127,8 +143,15 @@ When an unrecognized tag is scanned, tap **Register** to walk through:
 2. Select **brand** (Bambu Lab, eSUN, Polymaker, etc.)
 3. Select **color** from a palette
 4. Enter **label weight** (250g, 500g, 1000g, or custom)
-5. Enter **core weight** (weigh the empty spool or enter manually)
-6. Confirm — the spool is registered and the tag is written
+5. Select **core weight** (Bambu Low Temp 250g, Bambu High Temp 216g, Sunlu 185g, or custom: weigh the empty spool or enter manually)
+6. Confirm — the spool is registered with the scanned tag UID
+
+Scale samples are collected without waiting for additional ADC conversions, and
+background registration, heartbeats, and OTA checks are deferred while the
+registration wizard or printer/slot selection is open so they do not block touch
+input. After taring, readings strictly between -10g and +10g display as zero.
+Failed tare syncs are retried without replacing the local zero with the backend's
+older offset.
 
 ## Backend API
 

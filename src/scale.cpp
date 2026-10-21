@@ -39,20 +39,28 @@ void Scale::update() {
     if ((now - _lastSampleMs) < SCALE_SAMPLE_INTERVAL_MS) {
         return;
     }
-    _lastSampleMs = now;
-
-    if (!_driverPtr->wait_ready_timeout(10)) {
+    if (!_driverPtr->is_ready()) {
         return;
     }
+    _lastSampleMs = now;
 
-    _rawReading = _driverPtr->read_average(SCALE_READ_AVERAGE_SAMPLES);
+    _rawSamples[_rawSampleIndex] = _driverPtr->read();
+    _rawSampleIndex = (_rawSampleIndex + 1) % SCALE_READ_AVERAGE_SAMPLES;
+    if (_rawSampleCount < SCALE_READ_AVERAGE_SAMPLES) {
+        ++_rawSampleCount;
+    }
+    int64_t rawTotal = 0;
+    for (uint8_t i = 0; i < _rawSampleCount; ++i) {
+        rawTotal += _rawSamples[i];
+    }
+    _rawReading = static_cast<long>(rawTotal / _rawSampleCount);
     float scaleFactor = _driverPtr->get_scale();
     if (scaleFactor == 0.0f) {
         scaleFactor = DEFAULT_SCALE_CALIBRATION;
     }
 
     _weightGrams = (_rawReading - _driverPtr->get_offset()) / scaleFactor;
-    if (abs(_weightGrams) < 0.25f) {
+    if (abs(_weightGrams) < SCALE_ZERO_DEADBAND_G) {
         _weightGrams = 0.0f;
     }
 
@@ -98,6 +106,8 @@ long Scale::tareOffset() const {
 }
 
 void Scale::_resetHistory() {
+    _rawSampleCount = 0;
+    _rawSampleIndex = 0;
     _historyCount = 0;
     _historyIndex = 0;
     _stable = false;

@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+#include "config.h"
+
 class Scale {
 public:
     bool begin(float calibrationFactor, long tareOffset = 0);
@@ -21,7 +23,10 @@ private:
     bool _stable = false;
     float _weightGrams = 0.0f;
     long _rawReading = 0;
-    float _history[3] = {0.0f, 0.0f, 0.0f};
+    long _rawSamples[SCALE_READ_AVERAGE_SAMPLES] = {};
+    uint8_t _rawSampleCount = 0;
+    uint8_t _rawSampleIndex = 0;
+    float _history[SCALE_STABILITY_SAMPLES] = {};
     uint8_t _historyCount = 0;
     uint8_t _historyIndex = 0;
     uint32_t _lastSampleMs = 0;
