@@ -1235,23 +1235,7 @@ int TouchDisplay::hitTestRegCoreWeight(int16_t x, int16_t y) const {
     int x0 = (TFT_WIDTH - 2 * BTN_W - GAP) / 2;
     int y0 = STATUS_BAR_H + 44;
 
-    // Row 1: buttons 0 and 1
-    for (int i = 0; i < 2; i++) {
-        int bx = x0 + i * (BTN_W + GAP);
-        int by = y0;
-        if (x >= bx && x < bx + BTN_W && y >= by && y < by + BTN_H) {
-            return i;  // 0=low temp 250g, 1=high temp 216g
-        }
-    }
-
-    // Row 2: custom centered
-    int bx = (TFT_WIDTH - BTN_W) / 2;
-    int by = y0 + BTN_H + GAP;
-    if (x >= bx && x < bx + BTN_W && y >= by && y < by + BTN_H) {
-        return 2;  // custom
-    }
-
-    return -1;
+    return hitTestGrid(x, y, x0, y0, 2, 2, BTN_W, BTN_H, GAP, 4);
 }
 
 int TouchDisplay::hitTestRegCoreCustom(int16_t x, int16_t y) const {
@@ -1784,21 +1768,19 @@ void TouchDisplay::_drawRegCoreWeight() {
     _canvas.setTextSize(2);
     _canvas.drawString("Empty Spool Weight", TFT_WIDTH / 2, STATUS_BAR_H + 8);
 
-    // 3 buttons: 1 row of 2 + 1 centered below
     static constexpr int BTN_W = 200;
     static constexpr int BTN_H = 80;
     static constexpr int GAP = 16;
     int x0 = (TFT_WIDTH - 2 * BTN_W - GAP) / 2;
     int y0 = STATUS_BAR_H + 44;
 
-    // Row 1: Bambu Low Temp, Bambu High Temp
-    static const char* labels[] = {"Low Temp", "High Temp", "Custom"};
-    static const char* sublabels[] = {"250g", "216g", ""};
-    static const uint16_t colors[] = {C_SUCCESS, C_SUCCESS, C_ACCENT};
+    static const char* labels[] = {"Low Temp", "High Temp", "Sunlu", "Custom"};
+    static const char* sublabels[] = {"250g", "216g", "185g", ""};
+    static const uint16_t colors[] = {C_SUCCESS, C_SUCCESS, C_SUCCESS, C_ACCENT};
 
-    for (int i = 0; i < 2; i++) {
-        int bx = x0 + i * (BTN_W + GAP);
-        int by = y0;
+    for (int i = 0; i < 4; i++) {
+        int bx = x0 + (i % 2) * (BTN_W + GAP);
+        int by = y0 + (i / 2) * (BTN_H + GAP);
 
         _canvas.fillRoundRect(bx, by, BTN_W, BTN_H, 10, 0x2104);
         _canvas.drawRoundRect(bx, by, BTN_W, BTN_H, 10, colors[i]);
@@ -1811,16 +1793,6 @@ void TouchDisplay::_drawRegCoreWeight() {
         _canvas.setTextSize(2);
         _canvas.drawString(sublabels[i], bx + BTN_W / 2, by + BTN_H / 2 + 14);
     }
-
-    // Row 2: Custom centered
-    int bx = (TFT_WIDTH - BTN_W) / 2;
-    int by = y0 + BTN_H + GAP;
-    _canvas.fillRoundRect(bx, by, BTN_W, BTN_H, 10, 0x2104);
-    _canvas.drawRoundRect(bx, by, BTN_W, BTN_H, 10, C_ACCENT);
-    _canvas.setTextDatum(lgfx::middle_center);
-    _canvas.setTextColor(C_TEXT);
-    _canvas.setTextSize(3);
-    _canvas.drawString("Custom", bx + BTN_W / 2, by + BTN_H / 2);
 
     _canvas.setTextDatum(lgfx::top_left);
     _drawBackButton();

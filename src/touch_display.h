@@ -183,7 +183,7 @@ public:
     bool hitTestRegConfirmRegister(int16_t x, int16_t y) const;
     bool hitTestRegConfirmCancel(int16_t x, int16_t y) const;
     int hitTestRegWeight(int16_t x, int16_t y) const;  // 0=250, 1=500, 2=1000, 3=custom, -1=none
-    int hitTestRegCoreWeight(int16_t x, int16_t y) const; // 0=low temp 250g, 1=high temp 216g, 2=custom, -1=none
+    int hitTestRegCoreWeight(int16_t x, int16_t y) const; // 0=250g, 1=216g, 2=Sunlu 185g, 3=custom, -1=none
     int hitTestRegCoreCustom(int16_t x, int16_t y) const; // 0=weigh, 1=type, -1=none
     void showDebugCoords(const char* text);
 

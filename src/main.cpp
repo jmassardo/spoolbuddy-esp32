@@ -80,6 +80,7 @@ int clearPlatePrinterCount = 0;
 int lastPendingWriteSpoolIdSeen = 0;
 bool backendConnected = false;
 bool deviceRegistered = false;
+bool tareSyncPending = false;
 float lastReportedWeight = NAN;
 float scaleCalibration = DEFAULT_SCALE_CALIBRATION;
 long scaleTareOffset = 0;
@@ -95,13 +96,13 @@ long calTareRaw = 0;
 
 constexpr int REGISTER_CORE_WEIGHT_GRAMS = 250;
 constexpr int MAX_PRINTER_CHOICES = 16;
-constexpr int EXTERNAL_SPOOL_AMS_ID = 255;
-constexpr int EXTERNAL_SPOOL_TRAY_ID = 0;
 
 void setPixelColor(uint32_t color);
 void chirp(uint16_t frequency, uint16_t durationMs);
 void loadDeviceConfig();
 void saveScaleConfig();
+bool tareScale();
+bool backgroundRequestsAllowed();
 String generateDeviceId();
 const char* tagTypeToString(NfcTagType type);
 void applyDisplaySettings(int brightness, uint32_t blankTimeoutSeconds);
@@ -162,6 +163,7 @@ void loadDeviceConfig() {
     }
 
     scaleTareOffset = prefs.getLong(PREF_SCALE_TARE_OFFSET, 0);
+    tareSyncPending = prefs.getBool(PREF_TARE_SYNC_PENDING, false);
     prefs.end();
 }
 
@@ -170,7 +172,24 @@ void saveScaleConfig() {
     prefs.begin(DEVICE_NVS_NAMESPACE, false);
     prefs.putFloat(PREF_SCALE_CALIBRATION, scaleCalibration);
     prefs.putLong(PREF_SCALE_TARE_OFFSET, scaleTareOffset);
+    prefs.putBool(PREF_TARE_SYNC_PENDING, tareSyncPending);
     prefs.end();
+}
+
+bool tareScale() {
+    if (!scale.tare()) {
+        Serial.println("[SCALE] Tare failed: scale not ready");
+        return false;
+    }
+    scaleTareOffset = scale.tareOffset();
+    tareSyncPending = true;
+    saveScaleConfig();
+    return true;
+}
+
+bool backgroundRequestsAllowed() {
+    return appState == AppState::Home || appState == AppState::Scale ||
+           appState == AppState::Info || appState == AppState::Settings;
 }
 
 const char* tagTypeToString(NfcTagType type) {
@@ -191,6 +210,9 @@ void applyDisplaySettings(int brightness, uint32_t blankTimeoutSeconds) {
 }
 
 void applyCalibrationSettings(long tareOffset, float calibrationFactor) {
+    if (tareSyncPending) {
+        return;
+    }
     bool changed = false;
     if (tareOffset != scaleTareOffset) {
         scaleTareOffset = tareOffset;
@@ -247,13 +269,7 @@ void handleHeartbeatResponse(const HeartbeatResponse& response) {
     bool skipCalibrationSync = false;
 
     if (response.pendingCommand == "tare") {
-        if (scale.tare()) {
-            scaleTareOffset = scale.tareOffset();
-            saveScaleConfig();
-            if (!apiClient.postTareOffset(scaleTareOffset)) {
-                backendConnected = false;
-            }
-        }
+        tareScale();
         skipCalibrationSync = true;
     } else if (response.pendingCommand == "write_tag") {
         if (response.pendingWritePayload.present && response.pendingWritePayload.spoolId > 0 &&
@@ -480,13 +496,11 @@ void handleCalibrationTouch(TouchEvent touch) {
 
     } else if (calStep == CalStep::Tare) {
         if (touch != TouchEvent::TAP) return;
-        if (!scale.tare()) {
+        if (!tareScale()) {
             display.showStatus("Cal: Tare", "Tare failed!", "Scale not ready", "Tap to retry");
             return;
         }
         calTareRaw = scale.tareOffset();
-        scaleTareOffset = calTareRaw;
-        saveScaleConfig();
         chirp(880, 60);
 
         calStep = CalStep::Weigh;
@@ -686,7 +700,8 @@ void handleRegistrationTouch(TouchEvent touch) {
                 int btn = display.hitTestRegCoreWeight(tp.x, tp.y);
                 if (btn == 0) { customCoreWeight = 250; }       // Bambu Low Temp
                 else if (btn == 1) { customCoreWeight = 216; }  // Bambu High Temp
-                else if (btn == 2) {
+                else if (btn == 2) { customCoreWeight = 185; }  // Sunlu
+                else if (btn == 3) {
                     // Custom — show Weigh/Type choice
                     registerStep = RegisterStep::CoreWeightCustom;
                     display.showRegCoreCustom();
@@ -774,14 +789,13 @@ void handleHomeTileTap(HomeTile tile) {
             setPixelColor(statusPixel.Color(0, 12, 24));
             break;
         case HomeTile::ASSIGN:
-            display.showStatus("Assign Spool", "Scan spool tag, then", "place on NFC reader", "");
-            appState = AppState::Info;
-            stateExpiresAt = millis() + 8000;
+            resetMatchedSpoolState(true);
+            display.showStatus("Assign Spool", "Scan spool tag, then", "choose printer and slot", "");
+            appState = AppState::TagRead;
+            stateExpiresAt = millis() + 30000;
             break;
         case HomeTile::TARE:
-            if (scale.tare()) {
-                scaleTareOffset = scale.tareOffset();
-                saveScaleConfig();
+            if (tareScale()) {
                 display.showStatus("Scale Tared", "Empty scale stored", "Weight reset to zero", "");
                 chirp(1320, 90);
             } else {
@@ -845,9 +859,7 @@ void handleUiAction(bool longPress) {
             return;
         }
         // Long press on Scale = tare
-        if ((appState == AppState::Home || appState == AppState::Scale) && scale.tare()) {
-            scaleTareOffset = scale.tareOffset();
-            saveScaleConfig();
+        if ((appState == AppState::Home || appState == AppState::Scale) && tareScale()) {
             appState = AppState::Info;
             stateExpiresAt = millis() + 2000;
             display.showStatus("Scale Tared", "Empty scale stored", "Weight reset to zero", "");
@@ -949,10 +961,24 @@ void checkForOta(uint32_t now) {
         return;
     }
 
+    if (!backgroundRequestsAllowed()) {
+        return;
+    }
+
     if ((lastHeartbeatAt != 0 && (now - lastHeartbeatAt) < HEARTBEAT_INTERVAL_MS) || appState == AppState::Provisioning || appState == AppState::Ota) {
         return;
     }
     lastHeartbeatAt = now;
+
+    if (tareSyncPending) {
+        if (!apiClient.postTareOffset(scaleTareOffset)) {
+            Serial.println("[API] Tare sync failed; retaining local tare and retrying");
+            backendConnected = false;
+            return;
+        }
+        tareSyncPending = false;
+        saveScaleConfig();
+    }
 
     currentServerUrl = wifiManager.serverUrl();
     apiClient.setServerUrl(currentServerUrl);
@@ -1102,7 +1128,7 @@ void loop() {
         showHomeScreen();
     }
 
-    if (wifiManager.isConnected()) {
+    if (wifiManager.isConnected() && backgroundRequestsAllowed()) {
         attemptDeviceRegistration(now);
     }
 
@@ -1223,10 +1249,11 @@ void loop() {
             if (index >= 0 && index < availablePrinterCount) {
                 selectedPrinterIndex = index;
                 availableSlotCount = apiClient.getSlots(availablePrinters[index].id, availableSlots, 16);
-                if (availableSlotCount <= 1) {
-                    // No AMS (only external slot or error) — assign directly
-                    int amsId = availableSlotCount == 1 ? availableSlots[0].amsId : EXTERNAL_SPOOL_AMS_ID;
-                    int trayId = availableSlotCount == 1 ? availableSlots[0].trayId : EXTERNAL_SPOOL_TRAY_ID;
+                if (availableSlotCount <= 0) {
+                    showActionResultThenHome(false, "Unable to load printer slots");
+                } else if (availableSlotCount == 1) {
+                    int amsId = availableSlots[0].amsId;
+                    int trayId = availableSlots[0].trayId;
                     bool ok = apiClient.assignSpool(
                         matchedSpoolId,
                         availablePrinters[index].id,
