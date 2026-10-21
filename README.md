@@ -132,6 +132,10 @@ The touchscreen shows a **6-tile home screen**:
 4. Tap **Assign** to assign the spool to a printer's AMS slot
 5. Weight is automatically pushed to the backend
 
+The printer picker uses a 3×3 grid with larger, two-line names. If there are more
+than nine printers, use **Next** / **Prev** to change pages. AMS slot selection
+retains its 4×4 layout.
+
 ### Spool Registration
 
 When an unrecognized tag is scanned, tap **Register** to walk through:

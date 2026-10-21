@@ -175,6 +175,7 @@ public:
     bool hitTestConfirmNo(int16_t x, int16_t y) const;
     int hitTestTagMatchedAction(int16_t x, int16_t y) const;
     int hitTestPrinterList(int16_t x, int16_t y) const;
+    bool handlePrinterListNavigationTouch(int16_t x, int16_t y);
     int hitTestSlotList(int16_t x, int16_t y) const;
     int hitTestClearPlateList(int16_t x, int16_t y) const;
     int hitTestRegMaterial(int16_t x, int16_t y) const;  // 0-11 or -1
@@ -235,6 +236,7 @@ private:
     int _regColorIdx = 0;
     int _regWeightIdx = 3;
     int _printerListCount = 0;
+    int _printerListPage = 0;
     char _printerNames[16][32] = {};
     int _slotListCount = 0;
     char _slotLabels[16][12] = {};

@@ -108,13 +108,24 @@ constexpr int REG_BRAND_GAP = 12;
 constexpr int REG_BRAND_X0 = (TFT_WIDTH - REG_BRAND_COLS * REG_BRAND_BTN_W - (REG_BRAND_COLS - 1) * REG_BRAND_GAP) / 2;
 constexpr int REG_BRAND_Y0 = STATUS_BAR_H + 40;
 
-constexpr int PRINTER_GRID_COLS = 4;
-constexpr int PRINTER_GRID_ROWS = 4;
-constexpr int PRINTER_BTN_W = 105;
-constexpr int PRINTER_BTN_H = 55;
-constexpr int PRINTER_GRID_GAP = 8;
+constexpr int PRINTER_GRID_COLS = 3;
+constexpr int PRINTER_GRID_ROWS = 3;
+constexpr int PRINTER_BTN_W = 140;
+constexpr int PRINTER_BTN_H = 60;
+constexpr int PRINTER_GRID_GAP = 12;
 constexpr int PRINTER_GRID_X0 = (TFT_WIDTH - PRINTER_GRID_COLS * PRINTER_BTN_W - (PRINTER_GRID_COLS - 1) * PRINTER_GRID_GAP) / 2;
 constexpr int PRINTER_GRID_Y0 = STATUS_BAR_H + 40;
+constexpr int PRINTER_PAGE_SIZE = PRINTER_GRID_COLS * PRINTER_GRID_ROWS;
+constexpr int PRINTER_PAGE_BTN_Y = 286;
+constexpr int PRINTER_PAGE_BTN_H = 30;
+
+constexpr int SLOT_GRID_COLS = 4;
+constexpr int SLOT_GRID_ROWS = 4;
+constexpr int SLOT_BTN_W = 105;
+constexpr int SLOT_BTN_H = 55;
+constexpr int SLOT_GRID_GAP = 8;
+constexpr int SLOT_GRID_X0 = (TFT_WIDTH - SLOT_GRID_COLS * SLOT_BTN_W - (SLOT_GRID_COLS - 1) * SLOT_GRID_GAP) / 2;
+constexpr int SLOT_GRID_Y0 = STATUS_BAR_H + 40;
 
 constexpr int CLEAR_GRID_COLS = 3;
 constexpr int CLEAR_GRID_ROWS = 3;
@@ -429,6 +440,7 @@ void TouchDisplay::showConfirmPrompt(const char* prompt) {
 }
 
 void TouchDisplay::showPrinterList(const char** names, int count) {
+    _printerListPage = 0;
     _printerListCount = constrain(count, 0, static_cast<int>(sizeof(_printerNames) / sizeof(_printerNames[0])));
     for (int i = 0; i < _printerListCount; ++i) {
         strncpy(_printerNames[i], (names != nullptr && names[i] != nullptr) ? names[i] : "", sizeof(_printerNames[i]) - 1);
@@ -1295,12 +1307,32 @@ int TouchDisplay::hitTestPrinterList(int16_t x, int16_t y) const {
         return -1;
     }
 
-    return hitTestGrid(
+    int first = _printerListPage * PRINTER_PAGE_SIZE;
+    int index = hitTestGrid(
         x, y,
         PRINTER_GRID_X0, PRINTER_GRID_Y0,
         PRINTER_GRID_COLS, PRINTER_GRID_ROWS,
         PRINTER_BTN_W, PRINTER_BTN_H, PRINTER_GRID_GAP,
-        _printerListCount);
+        min(PRINTER_PAGE_SIZE, _printerListCount - first));
+    return index >= 0 ? first + index : -1;
+}
+
+bool TouchDisplay::handlePrinterListNavigationTouch(int16_t x, int16_t y) {
+    if (_screen != Screen::PRINTER_LIST || y < PRINTER_PAGE_BTN_Y ||
+        y >= PRINTER_PAGE_BTN_Y + PRINTER_PAGE_BTN_H) {
+        return false;
+    }
+    int lastPage = (_printerListCount - 1) / PRINTER_PAGE_SIZE;
+    if (x >= PRINTER_GRID_X0 && x < PRINTER_GRID_X0 + PRINTER_BTN_W && _printerListPage > 0) {
+        --_printerListPage;
+    } else if (x >= TFT_WIDTH - PRINTER_GRID_X0 - PRINTER_BTN_W &&
+               x < TFT_WIDTH - PRINTER_GRID_X0 && _printerListPage < lastPage) {
+        ++_printerListPage;
+    } else {
+        return false;
+    }
+    _needsRedraw = true;
+    return true;
 }
 
 int TouchDisplay::hitTestSlotList(int16_t x, int16_t y) const {
@@ -1310,9 +1342,9 @@ int TouchDisplay::hitTestSlotList(int16_t x, int16_t y) const {
 
     return hitTestGrid(
         x, y,
-        PRINTER_GRID_X0, PRINTER_GRID_Y0,
-        PRINTER_GRID_COLS, PRINTER_GRID_ROWS,
-        PRINTER_BTN_W, PRINTER_BTN_H, PRINTER_GRID_GAP,
+        SLOT_GRID_X0, SLOT_GRID_Y0,
+        SLOT_GRID_COLS, SLOT_GRID_ROWS,
+        SLOT_BTN_W, SLOT_BTN_H, SLOT_GRID_GAP,
         _slotListCount);
 }
 
@@ -1491,13 +1523,54 @@ void TouchDisplay::_drawPrinterList() {
     _canvas.setTextSize(2);
     _canvas.drawString("Select Printer", TFT_WIDTH / 2, CONTENT_Y + 18);
 
-    for (int index = 0; index < _printerListCount; ++index) {
+    int first = _printerListPage * PRINTER_PAGE_SIZE;
+    int count = min(PRINTER_PAGE_SIZE, _printerListCount - first);
+    for (int index = 0; index < count; ++index) {
         int col = index % PRINTER_GRID_COLS;
         int row = index / PRINTER_GRID_COLS;
         int bx = PRINTER_GRID_X0 + col * (PRINTER_BTN_W + PRINTER_GRID_GAP);
         int by = PRINTER_GRID_Y0 + row * (PRINTER_BTN_H + PRINTER_GRID_GAP);
 
-        drawGridButton(_canvas, bx, by, PRINTER_BTN_W, PRINTER_BTN_H, _printerNames[index], C_ACCENT, 1);
+        drawGridButton(_canvas, bx, by, PRINTER_BTN_W, PRINTER_BTN_H, "", C_ACCENT, 2);
+        constexpr int CHARS_PER_LINE = (PRINTER_BTN_W - 16) / 12;
+        const char* name = _printerNames[first + index];
+        if (strlen(name) <= CHARS_PER_LINE) {
+            _canvas.drawString(name, bx + PRINTER_BTN_W / 2, by + PRINTER_BTN_H / 2);
+        } else {
+            int split = CHARS_PER_LINE;
+            for (int i = CHARS_PER_LINE; i > 0; --i) {
+                if (name[i] == ' ') {
+                    split = i;
+                    break;
+                }
+            }
+            char line[CHARS_PER_LINE + 1] = {};
+            memcpy(line, name, split);
+            _canvas.drawString(line, bx + PRINTER_BTN_W / 2, by + PRINTER_BTN_H / 2 - 10);
+            const char* rest = name + split;
+            while (*rest == ' ') ++rest;
+            snprintf(line, sizeof(line), "%.*s", CHARS_PER_LINE, rest);
+            if (strlen(rest) > CHARS_PER_LINE) {
+                memcpy(line + CHARS_PER_LINE - 3, "...", 3);
+            }
+            _canvas.drawString(line, bx + PRINTER_BTN_W / 2, by + PRINTER_BTN_H / 2 + 10);
+        }
+    }
+    if (_printerListCount > PRINTER_PAGE_SIZE) {
+        if (_printerListPage > 0) {
+            _drawButton(PRINTER_GRID_X0, PRINTER_PAGE_BTN_Y, PRINTER_BTN_W, PRINTER_PAGE_BTN_H, "< Prev", C_ACCENT);
+        }
+        if (first + count < _printerListCount) {
+            _drawButton(TFT_WIDTH - PRINTER_GRID_X0 - PRINTER_BTN_W, PRINTER_PAGE_BTN_Y,
+                        PRINTER_BTN_W, PRINTER_PAGE_BTN_H, "Next >", C_ACCENT);
+        }
+        char page[12];
+        snprintf(page, sizeof(page), "%d/%d", _printerListPage + 1,
+                 (_printerListCount + PRINTER_PAGE_SIZE - 1) / PRINTER_PAGE_SIZE);
+        _canvas.setTextDatum(lgfx::middle_center);
+        _canvas.setTextSize(1);
+        _canvas.setTextColor(C_TEXT_DIM);
+        _canvas.drawString(page, TFT_WIDTH / 2, PRINTER_PAGE_BTN_Y + PRINTER_PAGE_BTN_H / 2);
     }
     _canvas.setTextDatum(lgfx::top_left);
 }
@@ -1512,12 +1585,12 @@ void TouchDisplay::_drawSlotList() {
     _canvas.drawString(title, TFT_WIDTH / 2, CONTENT_Y + 18);
 
     for (int index = 0; index < _slotListCount; ++index) {
-        int col = index % PRINTER_GRID_COLS;
-        int row = index / PRINTER_GRID_COLS;
-        int bx = PRINTER_GRID_X0 + col * (PRINTER_BTN_W + PRINTER_GRID_GAP);
-        int by = PRINTER_GRID_Y0 + row * (PRINTER_BTN_H + PRINTER_GRID_GAP);
+        int col = index % SLOT_GRID_COLS;
+        int row = index / SLOT_GRID_COLS;
+        int bx = SLOT_GRID_X0 + col * (SLOT_BTN_W + SLOT_GRID_GAP);
+        int by = SLOT_GRID_Y0 + row * (SLOT_BTN_H + SLOT_GRID_GAP);
 
-        drawGridButton(_canvas, bx, by, PRINTER_BTN_W, PRINTER_BTN_H, _slotLabels[index], C_ACCENT, 1);
+        drawGridButton(_canvas, bx, by, SLOT_BTN_W, SLOT_BTN_H, _slotLabels[index], C_ACCENT, 1);
     }
     _canvas.setTextDatum(lgfx::top_left);
 }

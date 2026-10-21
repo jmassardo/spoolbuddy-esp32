@@ -1245,7 +1245,8 @@ void loop() {
             }
         } else if (appState == AppState::PrinterList) {
             TouchPoint tp = display.lastTouchPoint();
-            int index = display.hitTestPrinterList(tp.x, tp.y);
+            int index = display.handlePrinterListNavigationTouch(tp.x, tp.y)
+                ? -1 : display.hitTestPrinterList(tp.x, tp.y);
             if (index >= 0 && index < availablePrinterCount) {
                 selectedPrinterIndex = index;
                 availableSlotCount = apiClient.getSlots(availablePrinters[index].id, availableSlots, 16);

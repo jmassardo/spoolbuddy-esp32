@@ -6,6 +6,12 @@
 class LovyanGFX {
 public:
     inline static std::vector<std::string> drawnText;
+    struct TextDraw {
+        std::string text;
+        int x, y, size;
+    };
+    inline static std::vector<TextDraw> textDraws;
+    int textSize = 1;
     template <typename... T> void fillRect(T...) {}
     template <typename... T> void drawRect(T...) {}
     template <typename... T> void fillRoundRect(T...) {}
@@ -16,10 +22,13 @@ public:
     template <typename... T> void drawArc(T...) {}
     template <typename... T> void setTextDatum(T...) {}
     template <typename... T> void setTextColor(T...) {}
-    template <typename... T> void setTextSize(T...) {}
+    void setTextSize(int size) { textSize = size; }
     template <typename... T> void setCursor(T...) {}
     template <typename... T> void print(T...) {}
-    void drawString(const char* text, int, int) { drawnText.emplace_back(text); }
+    void drawString(const char* text, int x, int y) {
+        drawnText.emplace_back(text);
+        textDraws.push_back({text, x, y, textSize});
+    }
     void init() {}
     void setRotation(int) {}
     void fillScreen(int) {}

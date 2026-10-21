@@ -11,6 +11,7 @@ int heartbeatCalls = 0, registrationCalls = 0, tarePosts = 0, assignments = 0;
 bool tarePostOk = true, tagPresent = false;
 int slotCount = 2, assignedSpool = 0, assignedPrinter = 0, assignedAms = 0, assignedTray = 0;
 int registeredCore = 0;
+int printerCount = 1;
 long backendTare = 100000;
 
 void tick(uint32_t elapsed = 25) {
@@ -37,6 +38,7 @@ void resetApp() {
     tareSyncPending = false;
     tarePostOk = true;
     tagPresent = false;
+    printerCount = 1;
     HX711::ready = true;
     HX711::nextReading = 100000;
     scaleCalibration = 1000;
@@ -185,6 +187,85 @@ void testRegistration() {
     }
 }
 
+void testPrinterGrid() {
+    resetApp();
+    const char* names[16] = {
+        "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9",
+        "P10", "P11", "P12", "P13", "P14", "P15", "P16",
+    };
+    for (int count : {0, 1, 9, 10, 16}) {
+        display.showPrinterList(names, count);
+        for (int page = 0; page < (count > 9 ? 2 : 1); ++page) {
+            LovyanGFX::textDraws.clear();
+            display.loop();
+            int nameCount = 0;
+            for (const auto& text : LovyanGFX::textDraws) {
+                if (text.text.empty() || text.y < 72 || text.y >= 276) continue;
+                ++nameCount;
+                assert(text.size == 2);
+                assert(text.x == 88 || text.x == 240 || text.x == 392);
+                assert(text.y == 102 || text.y == 174 || text.y == 246);
+            }
+            assert(nameCount == min(9, count - page * 9));
+            for (int cell = 0; cell < 9; ++cell) {
+                int index = page * 9 + cell;
+                assert(display.hitTestPrinterList(88 + (cell % 3) * 152, 102 + (cell / 3) * 72)
+                    == (index < count ? index : -1));
+            }
+            assert(display.hitTestPrinterList(165, 102) == -1);
+            assert(display.hitTestPrinterList(88, 138) == -1);
+            assert(display.hitTestPrinterList(88, 290) == -1);
+            assert(display.hitTestPrinterList(475, 102) == -1);
+            assert(!display.handlePrinterListNavigationTouch(390, 280));
+            bool advanced = display.handlePrinterListNavigationTouch(390, 301);
+            assert(advanced == (page == 0 && count > 9));
+        }
+        assert(display.handlePrinterListNavigationTouch(88, 301) == (count > 9));
+        assert(display.hitTestPrinterList(88, 102) == (count > 0 ? 0 : -1));
+    }
+
+    const char* longNames[] = {"Bambu Lab X1C", "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDE"};
+    display.showPrinterList(longNames, 2);
+    LovyanGFX::textDraws.clear();
+    display.loop();
+    int lines = 0;
+    for (const auto& text : LovyanGFX::textDraws) {
+        if (text.text.empty() || text.y < 72) continue;
+        assert(text.size == 2 && text.text.size() <= 10);
+        assert(text.y == 92 || text.y == 112);
+        ++lines;
+    }
+    assert(lines == 4);
+    assert(std::find(LovyanGFX::drawnText.begin(), LovyanGFX::drawnText.end(), "Bambu Lab") != LovyanGFX::drawnText.end());
+    assert(std::find(LovyanGFX::drawnText.begin(), LovyanGFX::drawnText.end(), "X1C") != LovyanGFX::drawnText.end());
+    assert(std::find(LovyanGFX::drawnText.begin(), LovyanGFX::drawnText.end(), "KLMNOPQ...") != LovyanGFX::drawnText.end());
+
+    display.showPrinterList(names, 16);
+    assert(display.handlePrinterListNavigationTouch(390, 301));
+    display.showPrinterList(names, 16);
+    assert(display.hitTestPrinterList(88, 102) == 0);
+    display.showSlotList("Printer", names, 16);
+    assert(display.hitTestSlotList(420, 290) == 15);
+    assert(!display.handlePrinterListNavigationTouch(390, 301));
+}
+
+void testPagedAssignment() {
+    resetApp();
+    printerCount = 16;
+    slotCount = 1;
+    tap(390, 100);
+    tagPresent = true;
+    tick();
+    tap(340, 285);
+    assert(appState == AppState::PrinterList);
+    int before = assignments;
+    tap(390, 301);
+    assert(appState == AppState::PrinterList && assignments == before);
+    tap(88, 246);
+    assert(appState == AppState::Home && assignments == before + 1);
+    assert(assignedPrinter == 22 && assignedSpool == 42 && assignedAms == 255);
+}
+
 void testBackgroundGating() {
     resetApp();
     for (AppState state : {AppState::Register, AppState::Calibrate, AppState::PrinterList,
@@ -243,10 +324,12 @@ ApiClient::LookupResult ApiClient::reportTagScanned(const String&, const String&
 }
 bool ApiClient::getSpoolById(int id, SpoolRecord& record) { record.spoolId = id; return true; }
 bool ApiClient::deleteSpool(int) { return true; }
-int ApiClient::getPrinters(PrinterInfo* printers, int) {
-    printers[0].id = 7;
-    printers[0].name = "Test printer";
-    return 1;
+int ApiClient::getPrinters(PrinterInfo* printers, int maxCount) {
+    for (int i = 0; i < min(printerCount, maxCount); ++i) {
+        printers[i].id = 7 + i;
+        printers[i].name = "Printer " + String(i + 1);
+    }
+    return min(printerCount, maxCount);
 }
 int ApiClient::getPrintersNeedingClear(PrinterInfo*, int) { return 0; }
 bool ApiClient::clearPlate(int) { return true; }
@@ -291,5 +374,7 @@ int main() {
     testAssignment(0, 0);
     testRegistration();
     testBackgroundGating();
+    testPrinterGrid();
+    testPagedAssignment();
     std::cout << "All firmware host regressions passed\n";
 }
